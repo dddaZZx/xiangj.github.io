@@ -1,3 +1,51 @@
+// ==========================================
+// 移动端/屏幕自适应模块 (插入到最前面)
+// ==========================================
+function fitToScreen() {
+    const container = document.querySelector('.device-container');
+    if (!container) return;
+
+    // 原始设计尺寸 (对应 CSS 中的 width: 800px; height: 500px)
+    const designWidth = 800;
+    const designHeight = 500;
+
+    // 获取当前窗口宽高
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+
+    // 计算缩放比例
+    // 留出 20px 的边距 (40 / windowWidth)
+    const padding = 40; 
+    const availableWidth = windowWidth - padding;
+    const availableHeight = windowHeight - padding;
+
+    const scaleX = availableWidth / designWidth;
+    const scaleY = availableHeight / designHeight;
+
+    // 取较小的比例，保证宽和高都能放下
+    let scale = Math.min(scaleX, scaleY);
+
+    // 如果屏幕比设计尺寸大，最大只放大到 1.1 倍 (可选，防止在大屏上过大)
+    if (scale > 1.1) scale = 1.1;
+
+    // 应用缩放样式
+    // 注意：这里覆盖了 CSS 中的 transform(-50%, -50%)，所以需要加上 translate
+    container.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    
+    // 确保容器有原点，以便 translate(-50%, -50%) 生效
+    container.style.left = '50%';
+    container.style.top = '50%';
+    container.style.position = 'absolute';
+}
+
+// 监听窗口大小变化和加载完成
+window.addEventListener('load', fitToScreen);
+window.addEventListener('resize', fitToScreen);
+// ==========================================
+// 自适应模块结束
+// ==========================================
+
+
 const languageConfig = {
     zh: {
         networkBtn: {
@@ -51,7 +99,7 @@ const languageConfig = {
             takePhoto: {
                 noNetwork: '好的(无网络，将照片存在本地)',
                 withNetwork: '(上传图片到服务器，\n并且等待服务器回发语音流)',
-                serverResponse: '你的面部数据非常迷人。\n你没有使用滤镜掩盖真实的皮肤纹理，这种在高清镜头下依然细腻、\n 健康的自然状态简直完美。你描画眼线时那专注而坚定的眼神直视过来，\n这种自信和掌控感比任何算法修饰都要漂亮。\n(来自服务器的语音流)'
+                serverResponse: '你的面部数据非常迷人。\n你没有使用滤镜掩盖真实的皮肤纹理，这种在高清镜头下依然细腻、\n 健康的自然状态简直完美。你描画眼线时那专注而坚定的眼神直视过来，\n这种自信和掌控感比任何算法修饰都要漂亮。\n(来自服务器 的语音流)'
             },
             weather: {
                 noNetwork: '(无网络，不做任何回复)',
@@ -61,7 +109,7 @@ const languageConfig = {
             color: {
                 noNetwork: '(无网络，不做任何回复)',
                 uploading: '(上传语音流到服务器，\n等待服务器回复语音流)',
-                serverResponse: '国际权威色彩机构潘通已经发布了年度代表色，\n为柔和桃（Pantone 13-1023 Peach Fuzz）。\n这是一种介于粉色和橙色之间的温暖、柔和的蜜桃色调。\n这个颜色定义了一整年的全球色彩趋势，\n并且已经在时尚、家居、美妆、平面设计等多个领域产生了广泛影响。\n(来自服务器的语音流)'
+                serverResponse: '国际权威色彩机构潘通已经发布了年度代表色，\n为柔和桃（Pantone 13-1023 Peach Fuzz）。\n 这是一种介于粉色和橙色之间的温暖、柔和的蜜桃色调。\n这个颜色定义了一整年的全球色彩趋势，\n并且已经在时尚、家居、美妆、平面设计等多个领域产生了广泛影响。\n(来自服务器的语音流)'
             },
             music: {
                 noNetwork: '(无网络，不做任何回复)',
@@ -427,7 +475,7 @@ voiceMenu.addEventListener('click', (e) => {
     // 通用对话处理函数
     function handleQuery(queryType) {
         const isConnected = wifiStatus.classList.contains('connected');
-        
+
         if (!isConnected) {
             showExecutingBubble(lang.voiceFeedback[queryType].noNetwork, 4000);
         } else {
@@ -546,7 +594,7 @@ function showExecutingBubble(text, duration = 2800) {
 
     const formattedText = text.replace(/\n/g, '<br>');
 
-    executingBubble.innerHTML = formattedText; 
+    executingBubble.innerHTML = formattedText;
     executingBubble.classList.add('show');
 
     executingTimeout = setTimeout(() => {
@@ -694,7 +742,6 @@ function setupZoomButton(button, zoomFunction) {
         resetLongPressState();
     };
 
-    button.addEventListener('mousedown', startPress);
 
     button.addEventListener('mouseup', endPress);
     button.addEventListener('touchend', endPress);
