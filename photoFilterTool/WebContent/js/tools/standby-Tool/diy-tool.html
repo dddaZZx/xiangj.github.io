@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Filter DIY Tool</title>
+    <link rel="stylesheet" href="../../../css/style.css">
+</head>
+<!-- The code here is for demonstration purposes only; the actual parameters need to be supported based on the camera's capabilities. -->
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <h2 class="section-title">LSKJ Photo Filter Tool</h2>
+            <h3>DIY Filter Tool</h3>
+            <div id="tool-container">
+                <div class="tool-section">
+
+                    <!-- 曝光度滑条 -->
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>曝光Exposure:</span>
+                            <span id="exposureValue" class="slider-value">0</span>
+                        </div>
+                        <input type="range" id="exposureSlider" class="slider" min="-100" max="100" value="0">
+                    </div>
+
+                    <!-- 亮度滑条 -->
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>亮度Brightness:</span>
+                            <span id="brightnessValue" class="slider-value">0</span>
+                        </div>
+                        <input type="range" id="brightnessSlider" class="slider" min="-100" max="100" value="0">
+                    </div>
+
+                    <!-- 对比度滑块 -->
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>对比度Contrast:</span>
+                            <span id="contrastValue" class="slider-value">0</span>
+                        </div>
+                        <input type="range" id="contrastSlider" class="slider" min="-100" max="100" value="0">
+                    </div>
+
+                    <!-- 饱和度滑条 -->
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>饱和度Saturation:</span>
+                            <span id="saturationValue" class="slider-value">0</span>
+                        </div>
+                        <input type="range" id="saturationSlider" class="slider" min="-100" max="100" value="0">
+                    </div>
+
+                    <!-- 阴影滑条 -->
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>阴影Shadow:</span>
+                            <span id="shadowValue" class="slider-value">0</span>
+                        </div>
+                        <input type="range" id="shadowSlider" class="slider" min="-100" max="100" value="0">
+                    </div>
+
+                    <!-- 高光滑条 -->
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>高光Highlight:</span>
+                            <span id="highlightValue" class="slider-value">0</span>
+                        </div>
+                        <input type="range" id="highlightSlider" class="slider" min="-100" max="100" value="0">
+                    </div>
+
+                    <!-- 色温滑条 -->
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>色温Temperature:</span>
+                            <span id="temperatureValue" class="slider-value">0</span>
+                        </div>
+                        <input type="range" id="temperatureSlider" class="slider" min="-100" max="100" value="0">
+                    </div>
+
+                    <!-- 色调滑条 -->
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>色调Tint:</span>
+                            <span id="tintValue" class="slider-value">0</span>
+                        </div>
+                        <input type="range" id="tintSlider" class="slider" min="-100" max="100" value="0">
+                    </div>
+
+                    <!-- RGB滑块 -->
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>伽马Red:</span>
+                            <span id="redValue" class="slider-value">0</span>
+                        </div>
+                        <input type="range" id="redSlider" class="slider" min="-100" max="100" value="0">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>伽马Green:</span>
+                            <span id="greenValue" class="slider-value">0</span>
+                        </div>
+                        <input type="range" id="greenSlider" class="slider" min="-100" max="100" value="0">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>伽马Blue:</span>
+                            <span id="blueValue" class="slider-value">0</span>
+                        </div>
+                        <input type="range" id="blueSlider" class="slider" min="-100" max="100" value="0">
+                    </div>
+
+                    <!-- 颗粒感滑块 -->
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>颗粒感1 (随机白色噪点):</span>
+                            <span id="grain1Value" class="slider-value">0</span>
+                        </div>
+                        <input type="range" id="grain1Slider" class="slider" min="0" max="100" value="0">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>颗粒感2 (随机RGB噪点):</span>
+                            <span id="grain2Value" class="slider-value">0</span>
+                        </div>
+                        <input type="range" id="grain2Slider" class="slider" min="0" max="100" value="0">
+                    </div>
+            
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>颗粒感3 (规则排列):</span>
+                            <span id="grain3Value" class="slider-value">0</span>
+                        </div>
+                        <input type="range" id="grain3Slider" class="slider" min="0" max="100" value="0">
+                    </div>
+            
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>颗粒感4 (贴图):</span>
+                            <span id="grain4Value" class="slider-value">0</span>
+                        </div>
+                        <input type="range" id="grain4Slider" class="slider" min="0" max="100" value="0">
+                    </div>
+                </div>
+                <!-- 按钮组1 -->
+                <div class="button-group">
+                    <button id="resetButton" class="reset-button">重置参数</button>
+                    <button id="saveButton" class="save-button">保存图片</button>
+                </div>
+
+                <!-- 按钮组2 -->
+                <div class="button-group">
+                    <button id="importButton" class="import-button">导入参数文件</button>
+                    <input type="file" id="fltfileInput" accept=".flt" style="display: none;">
+                    <button id="exportButton" class="export-button">保存参数文件</button>
+                </div>
+            </div>
+        </div>
+        <div class="right-panel">
+            <h2 class="preview-title">Preview Of The Effect</h2>
+            <div class="upload-area">
+                <input type="file" id="image-upload" accept="image/*">
+                <label for="image-upload" class="upload-button">Upload Image</label>
+                <div class="canvas-container">
+                    <div class="canvas-background"></div>
+                    <canvas id="image-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+            const toolContainer = document.getElementById('tool-container');
+            const imageUpload = document.getElementById('image-upload');
+            const canvas = document.getElementById('image-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            
+            let currentImage = null;
+            
+            // Initialize DIY Tool
+            const diyTool = new DIYTool(toolContainer, ctx, canvas);
+            
+            //处理图片上传
+            imageUpload.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = async function(event) {
+                        const img = new Image();
+                        img.onload = async function() {
+                            console.log('图片加载完成，原始尺寸:', img.width, 'x', img.height);
+
+                            // 清除之前的图片
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            ctx.fillStyle = '#fff';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                            //图片的横竖显示处理 - 简单处理，如果需要的话可以加上更复杂的逻辑
+                            if(img.height > img.width){
+                                document.documentElement.style.setProperty('--container-width', '512px');
+                            }
+                            else{
+                                document.documentElement.style.setProperty('--container-width', '1024px');
+                            }
+                           
+                            // 检查文件大小是否超过512K (512000 bytes) - 图片太大会导致页面卡顿
+                            if (file.size > 512000) {
+                                console.log('检测到大图片，进行压缩');
+                                
+                                const compressedImg = await compressImage(img, 512000);
+                                currentImage = compressedImg;
+                                
+                                canvas.width = compressedImg.width;
+                                canvas.height = compressedImg.height;
+                                ctx.drawImage(compressedImg, 0, 0);
+                                
+                                // 通知工具图片已上传
+                                diyTool.onImageUpload(compressedImg);
+                            } else {
+                                console.log('小图片，直接使用原图');
+                                
+                                currentImage = img;
+                                canvas.width = img.width;
+                                canvas.height = img.height;
+                                ctx.drawImage(img, 0, 0);
+                                
+                                // 通知工具图片已上传
+                                diyTool.onImageUpload(img);
+                            }
+                        };
+                        img.onerror = function() {
+                            console.error('图片加载失败');
+                        };
+                        img.src = event.target.result;
+                    };
+                    
+                    reader.onerror = function() {
+                        console.error('文件读取失败');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            /**
+             * 压缩图片到指定大小以下
+             * @param {Image} img - 原始图片对象
+             * @param {number} maxSize - 最大字节数
+             * @returns {Promise<Image>} - 压缩后的图片
+             */
+            async function compressImage(img, maxSize) {
+                let quality = 0.9; // 初始质量
+                let compressedBlob = null;
+                let tempCanvas = document.createElement('canvas');
+                let tempCtx = tempCanvas.getContext('2d');
+                
+                // 设置初始尺寸（保持宽高比）
+                let width = img.width;
+                let height = img.height;
+                
+                // 首先尝试调整尺寸
+                const maxDimension = 2000; // 最大尺寸限制
+                if (width > maxDimension || height > maxDimension) {
+                    if (width > height) {
+                        height *= maxDimension / width;
+                        width = maxDimension;
+                    } else {
+                        width *= maxDimension / height;
+                        height = maxDimension;
+                    }
+                }
+                
+                tempCanvas.width = width;
+                tempCanvas.height = height;
+                tempCtx.drawImage(img, 0, 0, width, height);
+                
+                // 调整质量直到满足大小要求
+                do {
+                    compressedBlob = await new Promise(resolve => {
+                        tempCanvas.toBlob(blob => resolve(blob), 'image/jpeg', quality);
+                    });
+                    
+                    if (compressedBlob.size > maxSize) {
+                        quality -= 0.1;
+                        // 如果质量已经很低但大小仍然太大，进一步缩小尺寸
+                        if (quality < 0.5 && compressedBlob.size > maxSize * 1.5) {
+                            width *= 0.9;
+                            height *= 0.9;
+                            tempCanvas.width = width;
+                            tempCanvas.height = height;
+                            tempCtx.drawImage(img, 0, 0, width, height);
+                        }
+                    }
+                } while (compressedBlob.size > maxSize && quality > 0.1);
+                
+                // 将压缩后的Blob转换为Image对象
+                return new Promise((resolve, reject) => {
+                    const compressedImg = new Image();
+                    compressedImg.onload = () => resolve(compressedImg);
+                    compressedImg.onerror = reject;
+                    compressedImg.src = URL.createObjectURL(compressedBlob);
+                });
+            }
+        });
+
+        class DIYTool {
+            constructor(container, ctx, canvas) {
+                this.container = container;
+                this.ctx = ctx;
+                this.canvas = canvas;
+                this.originalImageData = null;
+                this.currentImageData = null;
+                
+                this.initEventListeners();
+            }
+            
+            initEventListeners() {
+
+                // 曝光滑条事件监听
+                const exposureSlider = this.container.querySelector('#exposureSlider');
+                const exposureValue = this.container.querySelector('#exposureValue');
+                exposureSlider.addEventListener('input', () => {
+                    exposureValue.textContent = exposureSlider.value;
+                    this.applyAllAdjustments();
+                });
+                
+                // 亮度滑条事件监听
+                const brightnessSlider = this.container.querySelector('#brightnessSlider');
+                const brightnessValue = this.container.querySelector('#brightnessValue');
+                brightnessSlider.addEventListener('input', () => {
+                    brightnessValue.textContent = brightnessSlider.value;
+                    this.applyAllAdjustments();
+                });
+
+                // 对比度滑条事件监听
+                const contrastSlider = this.container.querySelector('#contrastSlider');
+                const contrastValue = this.container.querySelector('#contrastValue');
+                contrastSlider.addEventListener('input', () => {
+                    contrastValue.textContent = contrastSlider.value;
+                    this.applyAllAdjustments();
+                });
+
+                // 饱和度滑条事件监听
+                const saturationSlider = this.container.querySelector('#saturationSlider');
+                const saturationValue = this.container.querySelector('#saturationValue');
+                saturationSlider.addEventListener('input', () => {
+                    saturationValue.textContent = saturationSlider.value;
+                    this.applyAllAdjustments();
+                });
+
+                // 添加阴影滑条事件监听
+                const shadowSlider = this.container.querySelector('#shadowSlider');
+                const shadowValue = this.container.querySelector('#shadowValue');
+                shadowSlider.addEventListener('input', () => {
+                    shadowValue.textContent = shadowSlider.value;
+                    this.applyAllAdjustments();
+                });
+
+                // 高光滑条事件监听
+                const highlightSlider = this.container.querySelector('#highlightSlider');
+                const highlightValue = this.container.querySelector('#highlightValue');
+                highlightSlider.addEventListener('input', () => {
+                    highlightValue.textContent = highlightSlider.value;
+                    this.applyAllAdjustments();
+                });
+
+                // 色温滑条事件监听
+                const tempSlider = this.container.querySelector('#temperatureSlider');
+                const tempValue = this.container.querySelector('#temperatureValue');
+                tempSlider.addEventListener('input', () => {
+                    tempValue.textContent = tempSlider.value;
+                    this.applyAllAdjustments();
+                });
+
+                // 色调滑条事件监听
+                const tintSlider = this.container.querySelector('#tintSlider');
+                const tintValue = this.container.querySelector('#tintValue');
+                tintSlider.addEventListener('input', () => {
+                    tintValue.textContent = tintSlider.value;
+                    this.applyAllAdjustments();
+                });
+
+                // RGB滑块事件
+                const redSlider = this.container.querySelector('#redSlider');
+                const redValue = this.container.querySelector('#redValue');
+                redSlider.addEventListener('input', () => {
+                    redValue.textContent = redSlider.value;
+                    this.applyAllAdjustments();
+                });
+
+                const greenSlider = this.container.querySelector('#greenSlider');
+                const greenValue = this.container.querySelector('#greenValue');
+                greenSlider.addEventListener('input', () => {
+                    greenValue.textContent = greenSlider.value;
+                    this.applyAllAdjustments();
+                });
+
+                const blueSlider = this.container.querySelector('#blueSlider');
+                const blueValue = this.container.querySelector('#blueValue');
+                blueSlider.addEventListener('input', () => {
+                    blueValue.textContent = blueSlider.value;
+                    this.applyAllAdjustments();
+                });
+
+                // 颗粒感滑块事件
+                const grain1Slider = this.container.querySelector('#grain1Slider');
+                const grain1Value = this.container.querySelector('#grain1Value');
+                grain1Slider.addEventListener('input', () => {
+                    grain1Value.textContent = grain1Slider.value;
+                    this.applyAllAdjustments();
+                });
+
+                const grain2Slider = this.container.querySelector('#grain2Slider');
+                const grain2Value = this.container.querySelector('#grain2Value');
+                grain2Slider.addEventListener('input', () => {
+                    grain2Value.textContent = grain2Slider.value;
+                    this.applyAllAdjustments();
+                });
+
+                const grain3Slider = this.container.querySelector('#grain3Slider');
+                const grain3Value = this.container.querySelector('#grain3Value');
+                grain3Slider.addEventListener('input', () => {
+                    grain3Value.textContent = grain3Slider.value;
+                    this.applyAllAdjustments();
+                });
+
+                const grain4Slider = this.container.querySelector('#grain4Slider');
+                const grain4Value = this.container.querySelector('#grain4Value');
+                grain4Slider.addEventListener('input', () => {
+                    grain4Value.textContent = grain4Slider.value;
+                    this.applyAllAdjustments();
+                });
+
+                // RESET按钮事件
+                const resetButton = this.container.querySelector('#resetButton');
+                resetButton.addEventListener('click', () => {
+                    this.resetAllSliders();
+                    this.applyAllAdjustments();
+                });
+
+                // 保存图片按钮事件
+                const saveButton = this.container.querySelector('#saveButton');
+                saveButton.addEventListener('click', () => {
+                    this.saveImage();
+                });
+
+                // EXPORT按钮事件
+                const exportButton = this.container.querySelector('#exportButton');
+                exportButton.addEventListener('click', () => this.handleExport());
+
+                // IMPORT按钮事件
+                const importButton = this.container.querySelector('#importButton');
+                const fltfileInput = this.container.querySelector('#fltfileInput');
+                importButton.addEventListener('click', () => fltfileInput.click());
+                fltfileInput.addEventListener('change', (e) => this.handleFltImport(e));
+            }
+            
+            onImageUpload(img) {
+
+                 // 调试点A：检查接收到的图片信息
+            console.log('A. DiyTool接收 - 图片尺寸:', img.width, 'x', img.height);
+            console.log('A1. Canvas实际尺寸:', this.canvas.width, 'x', this.canvas.height);
+
+                // 保持原始图片尺寸
+                this.imgWidth = img.width;
+                this.imgHeight = img.height;
+                
+                // 设置canvas尺寸
+                this.canvas.width = this.imgWidth;
+                this.canvas.height = this.imgHeight;
+                
+                // 绘制图像并保存原始数据
+                this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
+                this.originalImageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                this.currentImageData = new ImageData(
+                    new Uint8ClampedArray(this.originalImageData.data),
+                    this.originalImageData.width,
+                    this.originalImageData.height
+                );
+                
+                // 重置所有滑条
+                this.resetAllSliders();
+            }
+            
+            resetAllSliders() {
+                const sliders = [
+                    { id: 'exposureSlider', valueId: 'exposureValue', defaultValue: 0 },
+                    { id: 'brightnessSlider', valueId: 'brightnessValue', defaultValue: 0 },
+                    { id: 'contrastSlider', valueId: 'contrastValue', defaultValue: 0 },
+                    { id: 'saturationSlider', valueId: 'saturationValue', defaultValue: 0 },
+                    { id: 'highlightSlider', valueId: 'highlightValue', defaultValue: 0 },
+                    { id: 'shadowSlider', valueId: 'shadowValue', defaultValue: 0 },
+                    { id: 'temperatureSlider', valueId: 'temperatureValue', defaultValue: 0 },
+                    { id: 'tintSlider', valueId: 'tintValue', defaultValue: 0 },
+                    { id: 'redSlider', valueId: 'redValue', defaultValue: 0 },
+                    { id: 'greenSlider', valueId: 'greenValue', defaultValue: 0 },
+                    { id: 'blueSlider', valueId: 'blueValue', defaultValue: 0 },
+                    { id: 'grain1Slider', valueId: 'grain1Value', defaultValue: 0 },
+                    { id: 'grain2Slider', valueId: 'grain2Value', defaultValue: 0 },
+                    { id: 'grain3Slider', valueId: 'grain3Value', defaultValue: 0 },
+                    { id: 'grain4Slider', valueId: 'grain4Value', defaultValue: 0 }
+                ];
+                
+                sliders.forEach(slider => {
+                    const element = this.container.querySelector(`#${slider.id}`);
+                    const valueElement = this.container.querySelector(`#${slider.valueId}`);
+                    if (element && valueElement) {
+                        element.value = slider.defaultValue;
+                        valueElement.textContent = slider.defaultValue;
+                    }
+                });
+            }
+            
+            applyAllAdjustments() {
+                if (!this.originalImageData) return;
+                
+                // 从原始数据开始
+                this.currentImageData = new ImageData(
+                    new Uint8ClampedArray(this.originalImageData.data),
+                    this.originalImageData.width,
+                    this.originalImageData.height
+                );
+                
+                // 获取当前各参数的滑块值
+                const exposureValue = parseInt(this.container.querySelector('#exposureSlider').value);
+                const brightnessValue = parseInt(this.container.querySelector('#brightnessSlider').value);
+                const contrastValue = parseInt(this.container.querySelector('#contrastSlider').value);
+                const saturationValue = parseInt(this.container.querySelector('#saturationSlider').value);
+                const shadowValue = parseInt(this.container.querySelector('#shadowSlider').value);
+                const highlightValue = parseInt(this.container.querySelector('#highlightSlider').value);
+                const temperatureValue = parseInt(this.container.querySelector('#temperatureSlider').value);
+                const tintValue = parseInt(this.container.querySelector('#tintSlider').value);
+                const redValue = parseInt(this.container.querySelector('#redSlider').value);
+                const greenValue = parseInt(this.container.querySelector('#greenSlider').value);
+                const blueValue = parseInt(this.container.querySelector('#blueSlider').value);
+                const grain1Value = parseInt(this.container.querySelector('#grain1Slider').value);
+                const grain2Value = parseInt(this.container.querySelector('#grain2Slider').value);
+                const grain3Value = parseInt(this.container.querySelector('#grain3Slider').value);
+                const grain4Value = parseInt(this.container.querySelector('#grain4Slider').value);
+                
+                // 各种颗粒效果 - 这个最好优先处理
+                if (grain1Value > 0) {
+                    this.applyRandomGrainEffect(this.currentImageData, grain1Value);
+                }
+                if (grain2Value > 0) {
+                    this.applyRandomGrainEffect_RGB(this.currentImageData, grain2Value);
+                }
+                if (grain3Value > 0) {
+                    this.applyPositionalGrainEffect(this.currentImageData, grain3Value);
+                }
+                if (grain4Value > 0) {
+                    this.applyPicGrainEffect(this.currentImageData, grain4Value);
+                }
+
+                // 应用曝光调整(先应用曝光，因为它是非线性调整)
+                if (exposureValue !== 0) {
+                    this.applyExposureEffect(this.currentImageData, exposureValue);
+                }
+                
+                // 应用亮度调整(后应用亮度，因为它是线性调整)
+                if (brightnessValue !== 0) {
+                    this.applyBrightnessEffect(this.currentImageData, brightnessValue);
+                }
+
+                // 对比度调整
+                if (contrastValue !== 0) {
+                    this.applyContrastEffect(this.currentImageData, contrastValue);
+                }
+
+                // 饱和度调整
+                if (saturationValue !== 0) {
+                    this.applySaturationEffect(this.currentImageData, saturationValue);
+                }
+
+                // 阴影调整
+                if (shadowValue !== 0) {
+                    this.applyShadowEffect(this.currentImageData, shadowValue);
+                }
+
+                // 高光调整
+                if (highlightValue !== 0) {
+                    this.applyHighlightEffect(this.currentImageData, highlightValue);
+                }
+
+                // 色温调整
+                this.applyTemperatureEffect(this.currentImageData, temperatureValue);
+
+                // 色调调整
+                this.applyTintEffect(this.currentImageData, tintValue);
+
+                // RGB调整 - 这个最好放在最后处理
+                this.applyRGBAdjustment(this.currentImageData, redValue, greenValue, blueValue);
+                
+                // 输出结果到canvas
+                this.ctx.putImageData(this.currentImageData, 0, 0);
+            }
+
+
+            /**
+             * 应用曝光效果调整
+             * @param {ImageData} imageData - 图像像素数据
+             * @param {number} exposureValue - 曝光调整值(-100到100)
+             * - 正值: 增加曝光(提亮图像，增强高光)
+             * - 负值: 减少曝光(压暗图像，保护高光)
+             */  
+            applyExposureEffect(imageData, exposureValue) {
+            // 创建查找表（只在曝光值变化时创建）
+            if (!this.exposureLUT || this.lastExposure !== exposureValue) {
+                this.exposureLUT = new Uint8ClampedArray(256);
+                const exposure = Math.pow(2, exposureValue / 50);
+                
+                for (let i = 0; i < 256; i++) {
+                    const value = i / 255;
+                    let adjusted;
+                    
+                    if (exposureValue > 0) {
+                        adjusted = 1 - Math.pow(1 - value, exposure);
+                    } else {
+                        adjusted = Math.pow(value, 1/exposure);
+                    }
+                    
+                    this.exposureLUT[i] = adjusted * 255;
+                }
+                this.lastExposure = exposureValue;
+            }
+            
+            // 使用查找表应用曝光
+            for (let i = 0; i < imageData.data.length; i += 4) {
+                imageData.data[i] = this.exposureLUT[imageData.data[i]];
+                imageData.data[i+1] = this.exposureLUT[imageData.data[i+1]];
+                imageData.data[i+2] = this.exposureLUT[imageData.data[i+2]];
+            }
+        }
+
+            
+            /**
+             * 应用亮度效果调整
+             * @param {ImageData} imageData - 图像像素数据
+             * @param {number} brightnessValue - 亮度调整值(-100到100)
+             * - 正值: 增加亮度(整体提亮)
+             * - 负值: 减少亮度(整体压暗)
+             */
+            applyBrightnessEffect(imageData, brightnessValue) {
+                // 将-100到100的范围转换为亮度调整值(-100到100)
+                // 直接线性调整，简单有效
+                const brightness = brightnessValue * 1.5; // 调整系数-可根据需要修改
+                
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    imageData.data[i] = this.clamp(imageData.data[i] + brightness);
+                    imageData.data[i+1] = this.clamp(imageData.data[i+1] + brightness);
+                    imageData.data[i+2] = this.clamp(imageData.data[i+2] + brightness);
+                }
+            }
+
+            /**
+             * 应用对比度效果调整
+             * @param {ImageData} imageData - 图像像素数据
+             * @param {number} contrastValue - 对比度调整值(-100到100)
+             * - 正值: 增加对比度
+             * - 负值: 减少对比度
+             */
+             applyContrastEffect(imageData, contrastValue) {
+            const factorMin = 0.8;
+            const factorDefault = 1;
+            const factorMax = 1.5;
+            
+            let factor;
+            
+            if (contrastValue < 0) {
+                factor = factorDefault + (contrastValue / 50) * (factorDefault - factorMin);
+            } else if (contrastValue === 0) {
+                factor = factorDefault;
+            } else {
+                factor = factorDefault + (contrastValue / 100) * (factorMax - factorDefault);
+            }
+
+            for (let i = 0; i < imageData.data.length; i += 4) {
+                imageData.data[i] = this.clamp(factor * (imageData.data[i] - 128) + 128);
+                imageData.data[i+1] = this.clamp(factor * (imageData.data[i+1] - 128) + 128);
+                imageData.data[i+2] = this.clamp(factor * (imageData.data[i+2] - 128) + 128);
+            }
+        }
+
+
+            /**
+             * 应用饱和度效果调整
+             * @param {ImageData} imageData - 图像像素数据
+             * @param {number} saturationValue - 饱和度调整值(-100到100)
+             * - 正值: 增加饱和度
+             * - 负值: 减少饱和度
+             */
+            applySaturationEffect(imageData, saturationValue) {
+                // 将-100到100的范围转换为饱和度系数(0-2)
+                const saturationFactor = 1 + (saturationValue / 100);
+                
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    const r = imageData.data[i];
+                    const g = imageData.data[i+1];
+                    const b = imageData.data[i+2];
+                    
+                    // 计算像素亮度 (使用加权平均法)
+                    const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+                    
+                    // 应用饱和度调整
+                    imageData.data[i] = this.clamp(brightness + (r - brightness) * saturationFactor);
+                    imageData.data[i+1] = this.clamp(brightness + (g - brightness) * saturationFactor);
+                    imageData.data[i+2] = this.clamp(brightness + (b - brightness) * saturationFactor);
+                }
+            }
+
+            /**
+             * 应用阴影效果调整
+             * @param {ImageData} imageData - 图像像素数据
+             * @param {number} shadowValue - 阴影调整值(-100到100)
+             * - 正值: 减少阴影(提亮暗部)
+             * - 负值: 增加阴影(压暗暗部)
+             */
+            applyShadowEffect(imageData, shadowValue) {
+                // 将-100到100的范围转换为0.5到1.5的系数
+                // 0表示不调整(1.0), 100表示最大提亮(1.5), -100表示最大压暗(0.5)
+                const shadowFactor = 1 + (shadowValue / 200);
+                
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    // 计算像素亮度 (使用加权平均法)
+                    const r = imageData.data[i];
+                    const g = imageData.data[i+1];
+                    const b = imageData.data[i+2];
+                    const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+                    
+                    // 只调整较暗的像素(亮度低于128)
+                    if (brightness < 128) {
+                        // 计算调整强度(越暗的像素调整幅度越大)
+                        const adjustStrength = (128 - brightness) / 128;
+                        
+                        // 应用阴影调整
+                        imageData.data[i] = this.clamp(r * (1 + (shadowFactor - 1) * adjustStrength));
+                        imageData.data[i+1] = this.clamp(g * (1 + (shadowFactor - 1) * adjustStrength));
+                        imageData.data[i+2] = this.clamp(b * (1 + (shadowFactor - 1) * adjustStrength));
+                    }
+                }
+            }
+
+             /**
+             * 应用高光效果调整
+             * @param {ImageData} imageData - 图像像素数据
+             * @param {number} highlightValue - 高光调整值(-100到100)
+             * - 正值: 降低高光(压亮高光区域)
+             * - 负值: 增加高光(提亮高光区域)
+             */
+             applyHighlightEffect(imageData, highlightValue) {
+                // 将-100到100的范围转换为0.5到1.5的系数
+                // 0表示不调整(1.0), 100表示最大压暗(0.5), -100表示最大提亮(1.5)
+                const highlightFactor = 1 + (highlightValue / 200);
+                
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    // 计算像素亮度 (使用加权平均法)
+                    const r = imageData.data[i];
+                    const g = imageData.data[i+1];
+                    const b = imageData.data[i+2];
+                    const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+                    
+                    // 只调整较亮的像素(亮度高于128)
+                    if (brightness > 128) {
+                        // 计算调整强度(越亮的像素调整幅度越大)
+                        const adjustStrength = (brightness - 128) / 128;
+                        
+                        // 应用高光调整
+                        imageData.data[i] = this.clamp(r * (1 + (highlightFactor - 1) * adjustStrength));
+                        imageData.data[i+1] = this.clamp(g * (1 + (highlightFactor - 1) * adjustStrength));
+                        imageData.data[i+2] = this.clamp(b * (1 + (highlightFactor - 1) * adjustStrength));
+                    }
+                }
+            }
+                    
+            // 色温调节 - 基于RGB通道的简单调整
+applyTemperatureEffect(imageData, temperature) {
+    if (temperature === 0) return; // 0表示不调整
+
+    // 根据温度值计算蓝色和红色通道的调整量
+    // 暖色调(正值)减少蓝色，增加红色
+    // 冷色调(负值)减少红色，增加蓝色
+    const blueAdjust = -temperature * 0.3; // 蓝色通道调整
+    const redAdjust = temperature * 0.3;   // 红色通道调整
+    const greenAdjust = temperature * 0.1; // 轻微调整绿色通道
+
+    for (let i = 0; i < imageData.data.length; i += 4) {
+        // 调整红色通道
+        imageData.data[i] = this.clamp(imageData.data[i] + redAdjust);
+        // 调整绿色通道
+        imageData.data[i + 1] = this.clamp(imageData.data[i + 1] + greenAdjust);
+        // 调整蓝色通道
+        imageData.data[i + 2] = this.clamp(imageData.data[i + 2] + blueAdjust);
+    }
+}
+
+// 色调调节 - 基于RGB通道的简单调整
+applyTintEffect(imageData, tint) {
+    if (tint === 0) return; // 0表示不调整
+
+    // 根据色调值计算绿色和红色通道的调整量
+    // 正色调值增加绿色，减少红色
+    // 负色调值增加红色，减少绿色
+    const greenAdjust = tint * 0.3; // 绿色通道调整
+    const redAdjust = -tint * 0.3;  // 红色通道调整
+    const blueAdjust = tint * 0.1;  // 轻微调整蓝色通道
+
+    for (let i = 0; i < imageData.data.length; i += 4) {
+        // 调整红色通道
+        imageData.data[i] = this.clamp(imageData.data[i] + redAdjust);
+        // 调整绿色通道
+        imageData.data[i + 1] = this.clamp(imageData.data[i + 1] + greenAdjust);
+        // 调整蓝色通道
+        imageData.data[i + 2] = this.clamp(imageData.data[i + 2] + blueAdjust);
+    }
+}
+
+            // RGB调整
+            applyRGBAdjustment(imageData, redValue, greenValue, blueValue) {
+                const rangeSettings = {
+                    red: { min: -60, default: 0, max: 60 },
+                    green: { min: -60, default: 0, max: 60 },
+                    blue: { min: -60, default: 0, max: 60 }
+                };
+            
+                // 计算各通道调整值
+                const calcAdjustment = (value, channel) => {
+                    const { min, default: def, max } = rangeSettings[channel];
+                    if (value < 0) {
+                        return def + (value / 100) * (def - min);
+                    } else if (value === 0) {
+                        return def;
+                    } else {
+                        return def + (value / 100) * (max - def);
+                    }
+                };
+            
+                let rAdj = calcAdjustment(redValue, 'red');
+                let gAdj = calcAdjustment(greenValue, 'green');
+                let bAdj = calcAdjustment(blueValue, 'blue');
+            
+                // 计算总强度
+                const totalAdjustment = Math.sqrt(rAdj ** 2 + gAdj ** 2 + bAdj ** 2);
+            
+                // 动态选择强度限制系数
+                const maxStrengthPercentage = this.shouldUseStrictLimit(rAdj, gAdj, bAdj) ? 0.35 : 0.5;
+                const maxTotalAdjustment = 103.92 * maxStrengthPercentage;
+            
+                // 强度限制
+                if (totalAdjustment > maxTotalAdjustment) {
+                    const scale = maxTotalAdjustment / totalAdjustment;
+                    rAdj *= scale;
+                    gAdj *= scale;
+                    bAdj *= scale;
+                }
+            
+                // 应用调整
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    imageData.data[i] = this.clamp(imageData.data[i] + rAdj);
+                    imageData.data[i+1] = this.clamp(imageData.data[i+1] + gAdj);
+                    imageData.data[i+2] = this.clamp(imageData.data[i+2] + bAdj);
+                }
+            }
+
+          
+            /**
+             * 应用随机白色颗粒效果到图像数据
+             * @param {ImageData} imageData - 图像像素数据对象 (包含width, height和data属性)
+             * @param {number} intensity - 噪点强度 (建议范围0-1，值越大噪点越明显)
+             * @param {number} [density=0.3] - 噪点密度 (0-1之间，0表示无噪点，1表示全图噪点)
+             * @param {number} [blockSize=1] - 噪点块大小 (1为单像素噪点，大于1会产生块状噪点效果)
+             * @example
+             * // 对图像应用中等强度、稀疏的单像素噪点
+             * applyRandomGrainEffect(imageData, 0.5, 0.3, 1);
+             * 
+             * // 对图像应用高强度、密集的4x4块状噪点
+             * applyRandomGrainEffect(imageData, 0.8, 0.7, 4);
+             */
+            applyRandomGrainEffect(imageData, intensity, density = 0.3, blockSize = 2) {
+                const grainAmount = intensity * 0.7;
+                const width = imageData.width;
+                const height = imageData.height;
+                
+                for (let y = 0; y < height; y += blockSize) {
+                    for (let x = 0; x < width; x += blockSize) {
+                        if (Math.random() > density) continue;
+                        
+                        const grainR = (Math.random() - 0.5) * grainAmount;
+                        const grainG = (Math.random() - 0.5) * grainAmount;
+                        const grainB = (Math.random() - 0.5) * grainAmount;
+                        const grainValue_wihte = (Math.random() - 0.5) * grainAmount;
+                        
+                        for (let dy = 0; dy < blockSize && y + dy < height; dy++) {
+                            for (let dx = 0; dx < blockSize && x + dx < width; dx++) {
+                                const idx = ((y + dy) * width + (x + dx)) * 4;
+
+                                imageData.data[idx] = this.clamp(imageData.data[idx] + grainValue_wihte);
+                                imageData.data[idx+1] = this.clamp(imageData.data[idx+1] + grainValue_wihte);
+                                imageData.data[idx+2] = this.clamp(imageData.data[idx+2] + grainValue_wihte);
+                            }
+                        }
+                    }
+                }
+            }
+
+            /**
+             * 应用随机RGB颗粒效果到图像数据
+             * @param {ImageData} imageData - 图像像素数据对象 (包含width, height和data属性)
+             * @param {number} intensity - 噪点强度 (建议范围0-1，值越大噪点越明显)
+             * @param {number} [density=0.3] - 噪点密度 (0-1之间，0表示无噪点，1表示全图噪点)
+             * @param {number} [blockSize=1] - 噪点块大小 (1为单像素噪点，大于1会产生块状噪点效果)
+             * @example
+             * applyRandomGrainEffect(imageData, 0.5, 0.3, 1);// 对图像应用中等强度、稀疏的单像素噪点
+             * 
+             * applyRandomGrainEffect(imageData, 0.8, 0.7, 4);// 对图像应用高强度、密集的4x4块状噪点
+             */
+             applyRandomGrainEffect_RGB(imageData, intensity, density = 0.3, blockSize = 1) {
+                const grainAmount = intensity * 0.7;
+                const width = imageData.width;
+                const height = imageData.height;
+                
+                for (let y = 0; y < height; y += blockSize) {
+                    for (let x = 0; x < width; x += blockSize) {
+                        // 控制稀疏度
+                        if (Math.random() > density) continue;
+                        /**
+                        * 如果grainR较大，grainG和grainB较小，噪点会偏红色。
+                        * 如果grainG较大，grainR和grainB较小，噪点会偏绿色。
+                        * 如果grainB较大，grainR和grainG较小，噪点会偏蓝色。
+                        * 如果grainR、grainG、grainB都较大，噪点会接近白色。
+                        * 如果grainR、grainG、grainB都较小，噪点会接近黑色。
+                         */
+                        // Math.random() - 0.5 会生成一个范围在-0.5到0.5之间的随机数，实现随机的明暗效果，更加自然
+                        const grainR = (Math.random() - 0.5) * grainAmount;
+                        const grainG = (Math.random() - 0.5) * grainAmount;
+                        const grainB = (Math.random() - 0.5) * grainAmount;
+                        // 应用噪点到整个区块
+                        for (let dy = 0; dy < blockSize && y + dy < height; dy++) {
+                            for (let dx = 0; dx < blockSize && x + dx < width; dx++) {
+                                const idx = ((y + dy) * width + (x + dx)) * 4;
+
+                                imageData.data[idx] = this.clamp(imageData.data[idx] + grainR);
+                                imageData.data[idx+1] = this.clamp(imageData.data[idx+1] + grainG);
+                                imageData.data[idx+2] = this.clamp(imageData.data[idx+2] + grainB);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 2. 基于像素位置的噪点
+            applyPositionalGrainEffect(imageData, intensity) {
+                const grainAmount = intensity * 0.5;
+                const width = imageData.width;
+                
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    const x = (i / 4) % width;
+                    const y = Math.floor((i / 4) / width);
+                    
+                    // 使用像素位置作为随机种子，产生相关噪声
+                    const seed = (x * 12345 + y * 67890) % 100000;
+                    const random = (seed * 9301 + 49297) % 233280 / 233280;
+                    
+                    const grainR = (random - 0.5) * grainAmount;
+                    const grainG = ((random * 1.3) % 1 - 0.5) * grainAmount;
+                    const grainB = ((random * 1.7) % 1 - 0.5) * grainAmount;
+                    
+                    imageData.data[i] = this.clamp(imageData.data[i] + grainR);
+                    imageData.data[i+1] = this.clamp(imageData.data[i+1] + grainG);
+                    imageData.data[i+2] = this.clamp(imageData.data[i+2] + grainB);
+                }
+            }
+            
+            // 3. 使用外部纹理贴图 - 可以实现基本效果,但是画面的颜色会收贴图的颜色影响
+            applyPicGrainEffect(imageData, intensity) {
+                // 如果强度为0或没有图像数据，直接返回
+                if (intensity <= 0 || !imageData) return;
+
+                const grainAmount = intensity * 0.1;//这里设置的越大，画面受底图影响的程度越深
+                const width = imageData.width;
+                const height = imageData.height;
+                
+                // 创建临时canvas来混合颗粒
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = width;
+                tempCanvas.height = height;
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                // 绘制当前图像
+                tempCtx.putImageData(imageData, 0, 0);
+                
+                // 确保纹理已加载
+                if (!this.filmGrainTexture || !this.filmGrainTexture.complete) {
+                    // 如果纹理未加载，先加载纹理（不影响主流程）
+                    if (!this.filmGrainTexture) {
+                        this.filmGrainTexture = new Image();
+                        this.filmGrainTexture.src = '../img/Texture-01.png';
+                        this.filmGrainTexture.onload = () => {
+                            // 纹理加载完成后可以重新应用效果
+                            this.applyAllAdjustments();
+                        };
+                    }
+                    return; // 首次调用时直接返回，不应用效果
+                }
+                
+                // 计算纹理缩放比例（保持原始比例）
+                const scale = Math.max(
+                    width / this.filmGrainTexture.width,
+                    height / this.filmGrainTexture.height
+                );
+                const scaledWidth = this.filmGrainTexture.width * scale;
+                const scaledHeight = this.filmGrainTexture.height * scale;
+                
+                // 创建纹理canvas
+                const textureCanvas = document.createElement('canvas');
+                textureCanvas.width = scaledWidth;
+                textureCanvas.height = scaledHeight;
+                const textureCtx = textureCanvas.getContext('2d');
+                
+                // 绘制缩放后的纹理
+                textureCtx.drawImage(this.filmGrainTexture, 0, 0, scaledWidth, scaledHeight);
+                
+                // 绘制颗粒纹理（居中显示）
+                tempCtx.globalAlpha = grainAmount / 100;
+                tempCtx.drawImage(
+                    textureCanvas,
+                    0, 0, scaledWidth, scaledHeight, // 源矩形
+                    0, 0, width, height // 目标矩形
+                );
+                tempCtx.globalAlpha = 1.0;
+                
+                // 获取混合后的图像数据
+                const blendedData = tempCtx.getImageData(0, 0, width, height);
+                
+                // 合并到当前图像
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    imageData.data[i] = blendedData.data[i];
+                    imageData.data[i+1] = blendedData.data[i+1];
+                    imageData.data[i+2] = blendedData.data[i+2];
+                    // 保留原始alpha通道
+                }   
+            }
+
+            
+            /**
+            // 示例：在Flutter/Dart中实现applyGrainEffect函数
+            // 注意：Dart中没有直接的ImageData对象，所以使用image库来处理图像
+            // 注意：需要在pubspec.yaml中添加依赖dependencies:image: ^3.2.0
+
+            // 使用示例：
+            /*final inputFile = File('/path/to/your/image.jpg');
+            /*final outputFile = await applyGrainToImageFile(inputFile, 50); 
+            /*Image.file(outputFile); //使用处理后的文件
+                        
+
+            import 'dart:typed_data';
+            import 'dart:io';
+            import 'dart:math';
+            import 'package:image/image.dart' as img;
+
+            // 以图片文件的形式来调用颗粒感效果函数
+            Future<File> applyGrainToImageFile(File imageFile, double intensity) async {
+            // 1. 读取图片文件为字节数据
+            final imageBytes = await imageFile.readAsBytes();
+            
+            // 2. 解码图片
+            final image = img.decodeImage(imageBytes);
+            if (image == null) {
+                throw Exception('Failed to decode image');
+            }
+
+            // 3. 应用颗粒效果
+            final processedImage = _applyGrain(image, intensity);
+
+            // 4. 编码处理后的图片为PNG
+            final processedImageBytes = img.encodePng(processedImage);
+
+            // 5. 创建临时文件保存结果
+            final tempDir = await Directory.systemTemp.createTemp();
+            final outputFile = File('${tempDir.path}/grain_${DateTime.now().millisecondsSinceEpoch}.png');
+            await outputFile.writeAsBytes(processedImageBytes);
+
+            return outputFile;
+            }
+
+            // 应用颗粒效果到图像
+            // 参数:
+            //   - image: 要处理的图像对象
+            //   - intensity: 颗粒强度(0-100)
+            // 返回值: 处理后的图像对象
+            img.Image _applyGrain(img.Image image, double intensity) {
+                // 1. 计算实际颗粒强度
+                // 将0-100的输入强度转换为0-50的实际强度值
+                // 乘以0.5是为了避免效果过于强烈
+                final grainAmount = intensity * 0.5;
+                
+                // 2. 创建随机数生成器
+                // 用于生成颗粒效果的随机噪声
+                final random = Random();
+                
+                // 3. 遍历图像的每个像素
+                // 使用双重循环遍历图像的每个像素点
+                // 外层循环遍历每一行(y坐标)
+                for (var y = 0; y < image.height; y++) {
+                    // 内层循环遍历每一列(x坐标)
+                    for (var x = 0; x < image.width; x++) {
+                        // 4. 获取当前像素
+                        // 获取(x,y)位置的像素对象
+                        final pixel = image.getPixel(x, y);
+                        
+                        // 5. 提取原始RGB值
+                        // 从像素中提取红色、绿色和蓝色通道的值
+                        final r = img.getRed(pixel);    // 红色通道值(0-255)
+                        final g = img.getGreen(pixel);  // 绿色通道值(0-255)
+                        final b = img.getBlue(pixel);   // 蓝色通道值(0-255)
+                        
+                        // 6. 为每个通道生成随机噪声
+                        // 生成范围在[-0.5,0.5)的随机数，然后乘以颗粒强度
+                        final grainR = (random.nextDouble() - 0.5) * grainAmount;  // 红色通道噪声
+                        final grainG = (random.nextDouble() - 0.5) * grainAmount;  // 绿色通道噪声
+                        final grainB = (random.nextDouble() - 0.5) * grainAmount;  // 蓝色通道噪声
+                        
+                        // 7. 计算新的RGB值并确保在有效范围内
+                        // 将噪声应用到原始值上，并使用clamp确保结果在0-255范围内
+                        final newR = (r + grainR).clamp(0, 255).toInt();  // 新红色值
+                        final newG = (g + grainG).clamp(0, 255).toInt();  // 新绿色值
+                        final newB = (b + grainB).clamp(0, 255).toInt(); // 新蓝色值
+                        
+                        // 8. 设置新的像素值
+                        // 保留原始alpha通道(透明度)不变
+                        image.setPixelRgba(x, y, newR, newG, newB, img.getAlpha(pixel));
+                    }
+                }
+                
+                // 9. 返回处理后的图像
+                return image;
+            } 
+
+            */  
+
+        /**
+         * 判断是否使用更严格的限制
+         * @param {number} rAdj - 红色通道调整值
+         * @param {number} gAdj - 绿色通道调整值
+         * @param {number} bAdj - 蓝色通道调整值
+         * @returns {boolean} - 是否使用更严格的限制
+         */
+        
+        // 判断是否使用更严格的限制
+        shouldUseStrictLimit(rAdj, gAdj, bAdj) {
+            // 情况1：两个或以上通道为负值
+            const negativeCount = [rAdj, gAdj, bAdj].filter(v => v < 0).length;
+            if (negativeCount >= 2) return true;
+        
+            // 情况2：影响最大的通道是负值
+            const maxImpactValue = Math.max(
+                Math.abs(rAdj), 
+                Math.abs(gAdj), 
+                Math.abs(bAdj)
+            );
+            return [rAdj, gAdj, bAdj].some(v => 
+                Math.abs(v) === maxImpactValue && v < 0
+            );
+        }
+
+        clamp(value) {
+            return Math.max(0, Math.min(255, value));
+        }
+            
+        /**
+        * 保存当前图像为PNG文件
+        */
+        async saveImage() {
+            if (!this.currentImageData) {
+                alert('请先上传图片并应用效果');
+                return;
+            }
+
+            // 创建一个临时canvas来确保保存的是当前显示的效果
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = this.canvas.width;
+            tempCanvas.height = this.canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+
+            // 绘制当前效果到临时canvas
+            tempCtx.putImageData(this.currentImageData, 0, 0);
+
+            // 将canvas转换为Blob
+            tempCanvas.toBlob(async (blob) => {
+                try {
+                    // 生成默认文件名
+                    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                    const defaultFileName = `webToolImg-${timestamp}.png`;
+
+                    // 优先尝试使用现代API
+                    if (window.showSaveFilePicker) {
+                        try {
+                            const handle = await window.showSaveFilePicker({
+                                suggestedName: defaultFileName, // 默认文件名
+                                types: [{
+                                    description: 'PNG Files',
+                                    accept: { 'image/png': ['.png'] }
+                                }]
+                            });
+                            const writable = await handle.createWritable();
+                            await writable.write(blob);
+                            await writable.close();
+                            return; // 成功保存后直接返回
+                        } catch (error) {
+                            if (error.name !== 'AbortError') {
+                                // 不是用户取消的错误才继续尝试兼容方案
+                                throw error;
+                            }
+                            // 用户取消操作，直接返回不执行后续操作
+                            return;
+                        }
+                    }
+
+                    // 现代API不可用或失败时使用兼容方案
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = defaultFileName; // 使用默认文件名
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                } catch (error) {
+                    console.error('保存图片失败:', error);
+                    alert('保存图片失败，请重试或检查浏览器支持情况。');
+                }
+            }, 'image/png');
+        }
+
+        // 参数文件导出处理
+        async handleExport() {
+            try {
+                const exposureValue = parseInt(this.container.querySelector('#exposureSlider').value);
+                const brightnessValue = parseInt(this.container.querySelector('#brightnessSlider').value);
+                const contrastValue = parseInt(this.container.querySelector('#contrastSlider').value);
+                const saturationValue = parseInt(this.container.querySelector('#saturationSlider').value);
+                const shadowValue = parseInt(this.container.querySelector('#shadowSlider').value);
+                const highlightValue = parseInt(this.container.querySelector('#highlightSlider').value);
+                const temperatureValue = parseInt(this.container.querySelector('#temperatureSlider').value);
+                const tintValue = parseInt(this.container.querySelector('#tintSlider').value);
+                const redValue = parseInt(this.container.querySelector('#redSlider').value);
+                const greenValue = parseInt(this.container.querySelector('#greenSlider').value);
+                const blueValue = parseInt(this.container.querySelector('#blueSlider').value);
+                const grain1Value = parseInt(this.container.querySelector('#grain1Slider').value);
+                const grain2Value = parseInt(this.container.querySelector('#grain2Slider').value);
+                const grain3Value = parseInt(this.container.querySelector('#grain3Slider').value);
+                const grain4Value = parseInt(this.container.querySelector('#grain4Slider').value);
+
+                let content = "\n";//第一行添加一个换行符
+                content += `exposureValue:${exposureValue}\n`;
+                content += `brightnessValue:${brightnessValue}\n`;
+                content += `contrastValue:${contrastValue}\n`;
+                content += `saturationValue:${saturationValue}\n`;
+                content += `shadowValue:${shadowValue}\n`;
+                content += `highlightValue:${highlightValue}\n`;
+                content += `temperatureValue:${temperatureValue}\n`;
+                content += `tintValue:${tintValue}\n`;
+                content += `redValue:${redValue}\n`;
+                content += `greenValue:${greenValue}\n`;
+                content += `blueValue:${blueValue}\n`;
+                content += `grain1Value:${grain1Value}\n`;
+                content += `grain2Value:${grain2Value}\n`;
+                content += `grain3Value:${grain3Value}\n`;
+                content += `grain4Value:${grain4Value}\n`;
+
+
+                // 优先尝试使用现代API
+                if (window.showSaveFilePicker) {
+                    try {
+                        const handle = await window.showSaveFilePicker({
+                            suggestedName: 'WebToolParameter.flt',
+                            types: [{ 
+                                description: 'FLT Files', 
+                                accept: { 'text/plain': ['.flt'] } 
+                            }]
+                        });
+                        const writable = await handle.createWritable();
+                        await writable.write(content);
+                        await writable.close();
+                        return; // 成功保存后直接返回
+                    } catch (error) {
+                        if (error.name !== 'AbortError') {
+                            // 不是用户取消的错误才继续尝试兼容方案
+                            throw error;
+                        }
+                        // 用户取消操作，直接返回不执行后续操作
+                        return;
+                    }
+                }
+
+                // 现代API不可用或失败时使用兼容方案
+                this.startDownload(content);
+            } catch (error) {
+                console.error('Export failed:', error);
+                // 这里不再自动调用startDownload，让用户决定是否重试
+            }
+        }
+
+        // 参数文件导入处理
+        handleFltImport(event) {
+            const file = event.target.files[0];
+            if (!file || !file.name.endsWith('.flt')) {
+                console.warn('请选择.flt文件');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                const fltParams = this.parseFltFile(content);
+
+                // 设置所有滑块值
+                this.container.querySelector('#exposureSlider').value = fltParams.exposureValue;
+                this.container.querySelector('#brightnessSlider').value = fltParams.brightnessValue;
+                this.container.querySelector('#contrastSlider').value = fltParams.contrastValue;
+                this.container.querySelector('#saturationSlider').value = fltParams.saturationValue;
+                this.container.querySelector('#shadowSlider').value = fltParams.shadowValue;
+                this.container.querySelector('#highlightSlider').value = fltParams.highlightValue;
+                this.container.querySelector('#temperatureSlider').value = fltParams.temperatureValue;
+                this.container.querySelector('#tintSlider').value = fltParams.tintValue;
+                this.container.querySelector('#redSlider').value = fltParams.redValue;
+                this.container.querySelector('#greenValue').value = fltParams.greenValue;
+                this.container.querySelector('#blueValue').value = fltParams.blueValue;
+                this.container.querySelector('#grain1Slider').value = fltParams.grain1Value;
+                this.container.querySelector('#grain2Slider').value = fltParams.grain2Value;
+                this.container.querySelector('#grain3Slider').value = fltParams.grain3Value;
+                this.container.querySelector('#grain4Slider').value = fltParams.grain4Value;
+                
+                // 更新所有显示值
+                this.container.querySelector('#exposureValue').textContent = fltParams.exposureValue;
+                this.container.querySelector('#brightnessValue').textContent = fltParams.brightnessValue;
+                this.container.querySelector('#contrastValue').textContent = fltParams.contrastValue;
+                this.container.querySelector('#saturationValue').textContent = fltParams.saturationValue;
+                this.container.querySelector('#shadowValue').textContent = fltParams.shadowValue;
+                this.container.querySelector('#highlightValue').textContent = fltParams.highlightValue;
+                this.container.querySelector('#temperatureValue').textContent = fltParams.temperatureValue;
+                this.container.querySelector('#tintValue').textContent = fltParams.tintValue;
+                this.container.querySelector('#redValue').textContent = fltParams.redValue;
+                this.container.querySelector('#greenValue').textContent = fltParams.greenValue;
+                this.container.querySelector('#blueValue').textContent = fltParams.blueValue;
+                this.container.querySelector('#grain1Value').textContent = fltParams.grain1Value;
+                this.container.querySelector('#grain2Value').textContent = fltParams.grain2Value;
+                this.container.querySelector('#grain3Value').textContent = fltParams.grain3Value;
+                this.container.querySelector('#grain4Value').textContent = fltParams.grain4Value;
+
+                // 应用调整
+                this.applyAllAdjustments();
+                
+                // 重置文件输入
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        // 解析参数文本文件
+        parseFltFile(content) {
+            const fltParams = {
+                exposureValue: 0,
+                brightnessValue: 0,
+                contrastValue: 0,
+                saturationValue: 0,
+                shadowValue: 0,
+                highlightValue: 0,
+                temperatureValue: 0,
+                tintValue: 0,
+                redValue: 0,
+                greenValue: 0,
+                blueValue: 0,
+                grain1Value: 0,
+                grain2Value: 0,
+                grain3Value: 0,
+                grain4Value: 0 
+            };
+
+            const lines = content.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line && line.includes(':')) {
+                    const parts = line.split(':');
+                    const key = parts[0].trim();  // 移除toLowerCase()
+                    const value = parseFloat(parts[1].trim()) || 0;
+                    
+                    if (key in fltParams) {
+                        fltParams[key] = value;
+                    }
+                }
+            } 
+            return fltParams;
+        }
+
+    }// end of class DIYTool
+    </script>
+</body>
+</html>
