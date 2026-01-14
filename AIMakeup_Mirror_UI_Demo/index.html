@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI化妆镜 - 交互演示</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="device-container">
+        <div class="fill-light" id="fillLight"></div>
+
+        <div class="screen" id="screen">
+            <div class="wifi-status disconnected" id="wifiStatus"></div>
+            <img src="pic/1.jpg" alt="Character" class="character-img" id="zoomImg">
+        </div>
+
+        <div class="left-controls">
+            <div class="ble-button" id="networkBtn">APP蓝牙配置</div>
+            <div class="light-switch-btn" id="toggleBtn">
+                <svg class="switch-icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+            </div>
+        </div>
+
+        <div class="top-controls">
+            <div class="zoom-button disabled" id="minusBtn">
+                <svg class="zoom-symbol" viewBox="0 0 24 24">
+                    <rect x="4" y="11" width="16" height="2" rx="1" ry="1"/>
+                </svg>
+            </div>
+            <div class="zoom-button" id="plusBtn">
+                <svg class="zoom-symbol" viewBox="0 0 24 24">
+                    <rect x="11" y="4" width="2" height="16" rx="1" ry="1"/>
+                    <rect x="4" y="11" width="16" height="2" rx="1" ry="1"/>
+                </svg>
+            </div>
+        </div>
+
+        <div class="right-controls">
+            <div class="voice-button" id="voiceBtn">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85A6.006 6.006 0 0 1 7.07 11c-.08-.49-.49-.85-.98-.85H5.5c-.55 0-1 .45-1 1 0 3.57 2.18 6.8 5.5 8.18v1.32h-2c-.55 0-1 .45-1 1H19c0-.55-.45-1-1-1h-2v-1.32c3.32-1.38 5.5-4.61 5.5-8.18 0-.55-.45-1-1-1h-.59z"/>
+                </svg>
+            </div>
+            <div class="speaker-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 3v18l-6-4.5H3a1.5 1.5 0 0 1-1.5-1.5v-6A1.5 1.5 0 0 1 3 7.5h3L12 3zm3 3.5a5.5 5.5 0 0 1 0 11 .75.75 0 1 1 0-1.5 4 4 0 0 0 0-8 .75.75 0 1 1 0-1.5zm0 3a2.5 2.5 0 0 1 0 5 .75.75 0 1 1 0-1.5 1 1 0 0 0 0-2 .75.75 0 1 1 0-1.5z"/>
+                </svg>
+            </div>
+            
+            <div class="voice-menu" id="voiceMenu">
+                <!-- 第一部分：灯光控制 -->
+                <div class="voice-option" data-action="light-on">打开补光灯</div>
+                <div class="voice-option" data-action="light-off">关闭补光灯</div>
+                <div class="voice-option" data-action="light-brighter">补光灯亮度调亮(高/大)一点</div>
+                <div class="voice-option" data-action="light-dimmer">补光灯亮度调暗(低/小)一点</div>
+                <div class="voice-option" data-action="light-set-percent" id="setPercentOption">补光灯亮度调到20%</div>
+                
+                <div class="menu-divider"></div>
+                
+                <!-- 第二部分：拍照 -->
+                <div class="voice-option" data-action="take-photo">拍照</div>
+                
+                <div class="menu-divider"></div>
+                
+                <!-- 第三部分：对话示例 -->
+                <div class="voice-option" data-action="weather-query">(对话示例1)今天天气怎么样？</div>
+                <div class="voice-option" data-action="color-query">(对话示例2)今年流行什么颜色？</div>
+                <div class="voice-option" data-action="music-query">(对话示例3)播放一段美妙的音乐</div>
+                <div class="voice-option" data-action="dummy-query">(对话示例...)</div>
+            </div>
+
+            <div class="executing-bubble" id="executingBubble">好的</div>
+        </div>
+
+        <button class="language-toggle" id="languageToggle">切换成英语</button>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-box">
+            <div class="modal-header" id="modalTitle">操作说明</div>
+            <div class="modal-content" id="modalContent"></div>
+            <div class="modal-footer">
+                <button class="modal-btn" id="confirmBtn">确认执行</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

@@ -1,0 +1,508 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #050505;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    overflow: hidden;
+}
+
+.device-container {
+    position: relative;
+    width: 800px;
+    height: 500px;
+}
+
+.fill-light {
+    position: absolute;
+    width: 552px;
+    height: 340px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #333333;
+    border-radius: 30px;
+    z-index: 1;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: none;
+}
+
+.screen {
+    position: absolute;
+    width: 512px;
+    height: 300px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 15px;
+    background: #000;
+    overflow: hidden;
+    z-index: 2;
+    transition: background-color 0.1s ease;
+}
+
+.character-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+    transform-origin: center center;
+}
+
+.character-img:not([src]),
+.character-img[src=""] {
+    background: linear-gradient(45deg, #333, #555);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 14px;
+}
+
+.wifi-status {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    width: 24px;
+    height: 24px;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+}
+
+.wifi-icon-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.wifi-status.disconnected { color: #888888; }
+.wifi-status.connecting { color: #ffffff; }
+.wifi-status.connecting .wifi-icon-svg { animation: spin 3s linear infinite; }
+.wifi-status.connected { color: #ffffff; }
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.left-controls {
+    position: absolute;
+    left: -50px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    z-index: 20;
+}
+
+.ble-button {
+    width: 140px;
+    height: 50px;
+    background-color: #333;
+    border: 2px solid #555;
+    border-radius: 8px;
+    color: #ddd;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ble-button:hover {
+    background-color: #444;
+    border-color: #777;
+    color: #fff;
+}
+
+.ble-button:active {
+    transform: scale(0.95);
+}
+
+.light-switch-btn {
+    width: 60px;
+    height: 60px;
+    background-color: #1a1a1a;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid #333;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.light-switch-btn:hover {
+    border-color: #555;
+    background-color: #222;
+}
+
+.light-switch-btn:active {
+    transform: scale(0.95);
+}
+
+.light-switch-btn.active {
+    border-color: #fff;
+    background-color: #444;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+}
+
+.light-switch-btn.long-pressing {
+    background-color: #555;
+    border-color: #aaa;
+    box-shadow: 0 0 20px rgba(255, 220, 100, 0.5);
+}
+
+.switch-icon {
+    width: 32px;
+    height: 32px;
+    fill: none;
+    stroke: #666;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: all 0.3s ease;
+}
+
+.light-switch-btn.active .switch-icon {
+    stroke: #fff;
+    filter: drop-shadow(0 0 5px rgba(255,255,255,0.8));
+}
+
+.top-controls {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+    z-index: 20;
+}
+
+.zoom-button {
+    width: 50px;
+    height: 50px;
+    background-color: #333;
+    border: 2px solid #555;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    user-select: none;
+}
+
+.zoom-button:hover {
+    background-color: #444;
+    border-color: #777;
+}
+
+.zoom-button:active {
+    transform: scale(0.95);
+}
+
+.zoom-button.disabled {
+    border-color: #444;
+    background-color: #222;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.zoom-button.disabled:hover,
+.zoom-button.disabled:active {
+    background-color: #222;
+    border-color: #444;
+    transform: none;
+}
+
+.zoom-symbol {
+    width: 24px;
+    height: 24px;
+    fill: #ddd;
+    transition: fill 0.3s ease;
+}
+
+.zoom-button:hover .zoom-symbol {
+    fill: #fff;
+}
+
+.zoom-button.disabled .zoom-symbol {
+    fill: #666;
+}
+
+.right-controls {
+    position: absolute;
+    right: -50px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    z-index: 20;
+}
+
+.voice-button {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    background-color: #333;
+    border: 2px solid #555;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.voice-button:hover {
+    background-color: #444;
+    border-color: #777;
+}
+
+.voice-button:active {
+    transform: scale(0.95);
+}
+
+.voice-button svg {
+    width: 28px;
+    height: 28px;
+    fill: #ddd;
+    transition: fill 0.3s ease;
+}
+
+.voice-button:hover svg {
+    fill: #fff;
+}
+
+.speaker-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.speaker-icon svg {
+    width: 32px;
+    height: 32px;
+    fill: #ddd;
+    transition: fill 0.3s ease;
+}
+
+.speaker-icon:hover svg {
+    fill: #fff;
+}
+
+.voice-menu {
+    position: absolute;
+    left: 60px;
+    top: -10px;
+    background: rgba(30, 30, 30, 0.92);
+    border: 1px solid #555;
+    border-radius: 10px;
+    padding: 8px 0;
+    min-width: 220px; /* 加宽以适应新文本 */
+    box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.22s ease;
+    z-index: 35;
+    pointer-events: none;
+}
+
+.voice-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.voice-option {
+    padding: 10px 18px;
+    color: #ddd;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.18s ease;
+}
+
+.voice-option:hover {
+    background: rgba(80,80,80,0.6);
+    color: white;
+}
+
+.menu-divider {
+    height: 1px;
+    background-color: #555;
+    margin: 4px 10px;
+}
+
+.executing-bubble {
+    position: absolute;
+    left: 60px;
+    top: calc(50% + 40px);
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 14px;
+    white-space: nowrap; /* 恢复原样：不换行 */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    pointer-events: none;
+    z-index: 30;
+}
+
+.executing-bubble.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.camera-flash-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    width: 80px;
+    height: 80px;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.camera-flash-icon.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.camera-flash-icon svg {
+    width: 100%;
+    height: 100%;
+    fill: white;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    backdrop-filter: blur(5px);
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-box {
+    width: 450px;
+    background-color: #222;
+    border: 1px solid #444;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-overlay.active .modal-box {
+    transform: scale(1);
+}
+
+.modal-header {
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 8px;
+}
+
+.modal-content {
+    font-size: 14px;
+    color: #ccc;
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
+.modal-btn {
+    background-color: #555;
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.modal-btn:hover { background-color: #666; }
+.modal-btn:active { background-color: #444; }
+
+.language-toggle {
+    position: absolute;
+    bottom: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 160px;
+    height: 40px;
+    background-color: #333;
+    border: 2px solid #555;
+    border-radius: 8px;
+    color: #ddd;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    z-index: 20;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.language-toggle:hover {
+    background-color: #444;
+    border-color: #777;
+    color: #fff;
+}
+
+.language-toggle:active {
+    transform: translateX(-50%) scale(0.95);
+}
