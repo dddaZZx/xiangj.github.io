@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let currentImage = null;
     let currentTool = null;
+    let originalImageData = null;  // 保存原始图像数据，用于对比功能
     
     // 加载默认工具
     loadTool('default');
@@ -66,6 +67,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         canvas.height = compressedImg.height;
                         ctx.drawImage(compressedImg, 0, 0);
                         
+                        // 保存原始（压缩后）图像数据
+                        originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        
                         // 通知工具图片已上传
                         if (currentTool && currentTool.onImageUpload) {
                             currentTool.onImageUpload(compressedImg);
@@ -82,6 +86,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         canvas.width = img.width;
                         canvas.height = img.height;
                         ctx.drawImage(img, 0, 0);
+                        
+                        // 保存原始图像数据
+                        originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                         
                         // 通知工具图片已上传
                         if (currentTool && currentTool.onImageUpload) {
@@ -115,67 +122,47 @@ document.addEventListener('DOMContentLoaded', function() {
      * @returns {Promise<Image>} - 压缩后的图片
      */
     async function compressImage(img, maxSize) {
-        let quality = 0.9; // 初始质量
-        let compressedBlob = null;
-        let tempCanvas = document.createElement('canvas');
-        let tempCtx = tempCanvas.getContext('2d');
-        
-        // 设置初始尺寸（保持宽高比）
-        let width = img.width;
-        let height = img.height;
-        
-        // 首先尝试调整尺寸
-        const maxDimension = 2000; // 最大尺寸限制
-        if (width > maxDimension || height > maxDimension) {
-            if (width > height) {
-                height *= maxDimension / width;
-                width = maxDimension;
-            } else {
-                width *= maxDimension / height;
-                height = maxDimension;
-            }
-        }
-        
-        tempCanvas.width = width;
-        tempCanvas.height = height;
-        tempCtx.drawImage(img, 0, 0, width, height);
-        
-        // 调整质量直到满足大小要求
+        let quality = 0.9;
+        let compressedDataUrl;
+
+        const offscreenCanvas = document.createElement('canvas');
+        const offscreenCtx = offscreenCanvas.getContext('2d');
+
+        // 初始尺寸
+        offscreenCanvas.width = img.width;
+        offscreenCanvas.height = img.height;
+        offscreenCtx.drawImage(img, 0, 0);
+
         do {
-            compressedBlob = await new Promise(resolve => {
-                tempCanvas.toBlob(blob => resolve(blob), 'image/jpeg', quality);
-            });
-            
-            if (compressedBlob.size > maxSize) {
-                quality -= 0.1;
-                // 如果质量已经很低但大小仍然太大，进一步缩小尺寸
-                if (quality < 0.5 && compressedBlob.size > maxSize * 1.5) {
-                    width *= 0.9;
-                    height *= 0.9;
-                    tempCanvas.width = width;
-                    tempCanvas.height = height;
-                    tempCtx.drawImage(img, 0, 0, width, height);
-                }
+            compressedDataUrl = offscreenCanvas.toDataURL('image/jpeg', quality);
+            quality -= 0.1;
+
+            if (quality <= 0.1) break; // 防止无限循环
+
+            // 创建临时 Image 来检查大小
+            const tempImg = new Image();
+            tempImg.src = compressedDataUrl;
+            await new Promise(resolve => tempImg.onload = resolve);
+
+            // 如果还是太大，缩小分辨率
+            if ((compressedDataUrl.length * 3 / 4) > maxSize && quality < 0.3) {
+                const scale = Math.sqrt(maxSize / (compressedDataUrl.length * 3 / 4)) * 0.9;
+                offscreenCanvas.width = img.width * scale;
+                offscreenCanvas.height = img.height * scale;
+                offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                offscreenCtx.drawImage(img, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                quality = 0.85; // 重置质量
             }
-        } while (compressedBlob.size > maxSize && quality > 0.1);
-        
-        // 将压缩后的Blob转换为Image对象
-        return new Promise((resolve, reject) => {
-            const compressedImg = new Image();
-            compressedImg.onload = () => resolve(compressedImg);
-            compressedImg.onerror = reject;
-            compressedImg.src = URL.createObjectURL(compressedBlob);
-        });
+        } while ((compressedDataUrl.length * 3 / 4) > maxSize && quality > 0.1);
+
+        const compressedImg = new Image();
+        compressedImg.src = compressedDataUrl;
+        await new Promise(resolve => compressedImg.onload = resolve);
+
+        return compressedImg;
     }
-    
-    // 加载工具函数
+
     function loadTool(toolName) {
-        // 清除当前工具
-        if (currentTool && currentTool.cleanup) {
-            currentTool.cleanup();
-        }
-        
-        // 更新UI状态
         if (toolName === 'default') {
             toolContainer.innerHTML = `
                 <div class="empty-state">
@@ -194,11 +181,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         setTimeout(() => {
             switch(toolName) {
-                case 'cs8':
-                    currentTool = new NT_CAM_Tool_2(toolContainer, ctx, canvas);
-                    break;
-                case 'NT-Cam':  // 联咏版
-                    currentTool = new NT_CAM_Tool_1(toolContainer, ctx, canvas);
+                case 'NT-Cam':
+                    currentTool = new NT_CAM_Tool(toolContainer, ctx, canvas);
                     break;
                 case 'JL-Cam':
                     currentTool = new JL_CAM_Tool(toolContainer, ctx, canvas);
@@ -208,22 +192,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     break;
             }
             
-            // 如果有图片，通知新工具
             if (currentImage && currentTool.onImageUpload) {
                 currentTool.onImageUpload(currentImage);
             }
-        }, 300); // 添加一点延迟让加载动画可见
+        }, 300);
     }
     
-    // 重绘原始图片
     function redrawOriginalImage() {
         if (currentImage) {
-            // 保持canvas尺寸与图片原始尺寸一致
             canvas.width = currentImage.width;
             canvas.height = currentImage.height;
             ctx.drawImage(currentImage, 0, 0);
             
-            // 更新当前工具的图像数据
             if (currentTool && currentTool.updateImageData) {
                 currentTool.updateImageData();
             }
@@ -267,4 +247,108 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     initEmptyState();
+    
+    // 自动加载示例图片
+    loadExampleImage();
+    
+/**
+ * 自动加载示例图片 - 支持本地 file:// 和 http 环境
+ */
+async function loadExampleImage() {
+    try {
+        console.log('正在加载示例图片...');
+        
+        placeholderContent.innerHTML = '<i class="fas fa-spinner fa-spin"></i><p>Loading example image...</p>';
+        placeholderContent.style.display = 'flex';
+
+        const imagePath = '../../img/1.jpg';  // 相对路径
+        
+        let blob;
+        
+        // 优先尝试 fetch（http/https 环境或允许的本地服务器）
+        try {
+            const response = await fetch(imagePath);
+            if (response.ok) {
+                blob = await response.blob();
+                console.log('使用 fetch 加载示例图片成功');
+            }
+        } catch (fetchErr) {
+            console.warn('fetch 加载失败，可能是本地 file:// 协议，切换到 img 标签方式', fetchErr);
+        }
+        
+        // 如果 fetch 失败或没拿到 blob，用 <img> 标签方式加载（file:// 友好）
+        if (!blob) {
+            const img = new Image();
+            img.src = imagePath;
+            
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = () => reject(new Error('示例图片加载失败 - img 方式'));
+            });
+            
+            // 通过 canvas 转成 blob（模拟 fetch 的输出）
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = img.width;
+            tempCanvas.height = img.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(img, 0, 0);
+            
+            blob = await new Promise(resolve => {
+                tempCanvas.toBlob(resolve, 'image/jpeg', 0.95);
+            });
+            
+            console.log('使用 <img> 标签 + canvas 加载示例图片成功');
+        }
+        
+        // 统一处理：创建 File 对象，模拟用户上传
+        const file = new File([blob], 'example.jpg', { 
+            type: 'image/jpeg',
+            lastModified: Date.now()
+        });
+        
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        
+        imageUpload.files = dataTransfer.files;
+        
+        const changeEvent = new Event('change', { bubbles: true });
+        imageUpload.dispatchEvent(changeEvent);
+        
+        console.log('示例图片加载完成');
+        
+    } catch (error) {
+        console.error('加载示例图片失败:', error);
+        placeholderContent.innerHTML = `
+            <i class="fas fa-image"></i>
+            <p>No image selected</p>
+            <small>Click or drop an image here</small>
+        `;
+        placeholderContent.style.display = 'flex';
+    }
+}
+
+    // 悬浮对比按钮 - 按住显示原图，松开恢复当前效果
+    const compareBtn = document.getElementById('compare-btn');
+    if (compareBtn) {
+        let currentImageDataBeforeCompare = null;
+
+        compareBtn.addEventListener('pointerdown', () => {
+            if (!originalImageData) return;
+            currentImageDataBeforeCompare = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            ctx.putImageData(originalImageData, 0, 0);
+        });
+
+        compareBtn.addEventListener('pointerup', () => {
+            if (!currentImageDataBeforeCompare) return;
+            ctx.putImageData(currentImageDataBeforeCompare, 0, 0);
+            currentImageDataBeforeCompare = null;
+        });
+
+        compareBtn.addEventListener('pointerleave', () => {
+            if (currentImageDataBeforeCompare) {
+                ctx.putImageData(currentImageDataBeforeCompare, 0, 0);
+                currentImageDataBeforeCompare = null;
+            }
+        });
+    }
 });

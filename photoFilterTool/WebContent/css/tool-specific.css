@@ -1,0 +1,335 @@
+/* tool-specific.css */
+/* 专门负责所有工具面板内部的控件样式（包括 Default / JL / NT） */
+
+/* ============ 滤镜模板折叠栏 & 按钮样式 ============ */
+/* 按钮容器：每行2个，底部预留间距 */
+.filter-template-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 每行2个按钮，等宽分布 */
+    gap: 12px; /* 按钮之间间距 */
+    padding: 18px; /* 与Color Controls内部padding一致 */
+    padding-bottom: 25px; /* 最后一行按钮与折叠区域底部的间距 */
+}
+
+/* 滤镜按钮样式：与整体风格统一，hover效果优化 */
+.filter-template-btn {
+    padding: 10px 0;
+    border: none;
+    border-radius: var(--border-radius);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: var(--light-text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.filter-template-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(108, 92, 231, 0.4);
+    opacity: 0.95;
+}
+
+.filter-template-btn:active {
+    transform: translateY(0);
+}
+
+/* ============ 滑块组 ============ */
+.slider-group {
+    margin-bottom: 8px;
+}
+
+.slider-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: var(--muted-text);
+}
+
+.slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+    -webkit-appearance: none;
+    transition: all 0.2s ease;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.slider:hover::-webkit-slider-thumb {
+    transform: scale(1.1);
+    box-shadow: 0 2px 6px rgba(108, 92, 231, 0.4);
+}
+
+.slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    border: none;
+}
+
+.slider:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============ 按钮组 ============ */
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0 10px;
+    justify-content: center;
+}
+
+.button-group button {
+    flex: 1;
+    padding: 8px 20px;
+    border: none;
+    border-radius: var(--border-radius);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.button-group button i {
+    margin-right: 6px;
+}
+
+.button-group button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: 0.5s;
+}
+
+.button-group button:hover::after {
+    left: 100%;
+}
+
+.button-group button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.button-group button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.import-button   { background: linear-gradient(135deg, #00b894 0%, #55efc4 100%); }
+.reset-button    { background: linear-gradient(135deg, #e17055 0%, #fab1a0 100%); }
+.export-button   { background: linear-gradient(135deg, #0984e3 0%, #74b9ff 100%); }
+
+.button-group button:disabled {
+    background: #636e72 !important;
+    cursor: not-allowed;
+    opacity: 0.7;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ============ 单选按钮组 ============ */
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.radio-group label {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 10px 15px;
+    border-radius: var(--border-radius);
+    background-color: rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+    color: var(--muted-text);
+}
+
+.radio-group label:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--light-text);
+}
+
+.radio-group input[type="radio"] {
+    margin-right: 10px;
+    accent-color: var(--primary-color);
+}
+
+/* ============ 空状态 & 加载状态 ============ */
+.empty-state,
+.tool-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted-text);
+    height: 100%;
+}
+
+.empty-state i,
+.tool-loading i {
+    font-size: 48px;
+    margin-bottom: 20px;
+    color: rgba(255, 255, 255, 0.1);
+    opacity: 0.6;
+}
+
+.tool-loading i {
+    font-size: 20px;
+    margin-right: 10px;
+    margin-bottom: 0;
+}
+
+/* ============ 工具提示 ============ */
+.tooltip {
+    position: relative;
+    display: inline-block;
+    margin-left: 5px;
+    cursor: help;
+}
+
+.tooltip .fa-info-circle {
+    color: var(--accent-color);
+    transition: 0.2s;
+}
+
+.tooltip:hover .fa-info-circle {
+    color: var(--primary-color);
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 220px;
+    background-color: var(--darker-bg);
+    color: var(--light-text);
+    text-align: left;
+    border-radius: var(--border-radius);
+    padding: 12px;
+    position: absolute;
+    z-index: 1000;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 13px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: var(--box-shadow);
+    line-height: 1.4;
+}
+
+.tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 15px;
+    margin-left: -5px;
+    border: 5px solid transparent;
+    border-top-color: var(--darker-bg);
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* ============ 可折叠区域 - 统一样式（Filter template + Color Controls） ============ */
+.collapsible-section {
+    margin: 0 0 15px 0; /* 两个折叠栏之间的间距 */
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    background-color: rgba(45, 52, 54, 0.8); /* 与select背景一致 */
+    transition: all 0.25s ease;
+}
+
+.collapsible-header {
+    cursor: pointer;
+    height: 42px;
+    padding: 0 18px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--light-text); /* 白色字体，确保清晰 */
+    background: transparent;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+    transition: all 0.25s ease;
+    position: relative;
+    list-style: none;
+}
+
+.collapsible-header:hover {
+    background-color: rgba(45, 52, 54, 1); /* hover加深背景 */
+}
+
+.collapsible-arrow {
+    font-size: 10px;
+    color: var(--light-text); /* 箭头颜色与字体一致 */
+    transition: transform 0.25s ease; /* 平滑旋转过渡 */
+    transform-origin: center; /* 关键补充：旋转中心为图标中心，动画更流畅 */
+}
+
+/* 统一箭头旋转逻辑：展开时向下（0度），折叠时向右（90度） */
+.collapsible-section[open] .collapsible-arrow {
+    transform: rotate(0deg);
+}
+
+.collapsible-section:not([open]) .collapsible-arrow {
+    transform: rotate(90deg);
+}
+
+.collapsible-section > *:not(summary):not(.collapsible-header) {
+    padding: 4px 18px 0px 18px !important;
+}
+
+.collapsible-header::-webkit-details-marker {
+    display: none; /* 隐藏默认箭头，只显示自定义箭头 */
+}
+
+/* ============ 动画 ============ */
+.tool-section {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.filter-temp-section > *:not(summary):not(.collapsible-header) {
+    padding-bottom: 20px !important; /* 只针对滤镜模板 */
+}

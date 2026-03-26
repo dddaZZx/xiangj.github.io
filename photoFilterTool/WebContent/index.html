@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Filter Studio</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/tool-specific.css">  <!-- 工具特定样式 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -12,7 +13,7 @@
         <div class="left-panel">
             <div class="header">
                 <h2 class="section-title">
-                    <i class="fas fa-sliders-h"></i> Filter Studio
+                    <i class="fas fa-sliders-h"></i> Filter Customization
                 </h2>
             </div>
             
@@ -35,17 +36,17 @@
         
         <div class="right-panel">
             <div class="preview-header">
-                <h2 class="preview-title">
-                    <i class="fas fa-image"></i> Image Preview
-                </h2>
+                <div class="preview-title-wrapper">
+                    <div class="upload-controls">
+                        <input type="file" id="image-upload" accept="image/*">
+                        <label for="image-upload" class="upload-button">
+                            <i class="fas fa-cloud-upload-alt"></i> Upload Image
+                        </label>
+                    </div>
+                </div>
             </div>
             
-            <div class="upload-area">
-                <input type="file" id="image-upload" accept="image/*">
-                <label for="image-upload" class="upload-button">
-                    <i class="fas fa-cloud-upload-alt"></i> Upload Image
-                </label>
-                
+            <div class="preview-container">
                 <div class="canvas-container">
                     <div class="canvas-background">
                         <div class="placeholder-content">
@@ -55,15 +56,26 @@
                     </div>
                     <canvas id="image-canvas"></canvas>
                 </div>
+
+                <!-- 新增：悬浮对比工具栏 -->
+                <div class="compare-toolbar">
+                    <button id="compare-btn" title="按住对比原图">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- 脚本加载顺序：先加载依赖，最后加载核心工具 -->
     <script src="js/tools/default-tool.js"></script>
-    <script src="js/tools/NT_CAM_Tool_2.js"></script>
-    <script src="js/tools/NT_CAM_Tool_1.js"></script>
+    <script src="js/tools/NT_CAM_Tool.js"></script>
+    <script src="js/tools/NT_CAM_ColorControls.js"></script>
+    <script src="js/tools/NT_CAM_FilterTemp.js"></script>
     <script src="js/tools/JL_CAM_Tool_filters.js"></script>
     <script src="js/tools/JL_CAM_Tool.js"></script>
+    <script src="js/tools/JL_CAM_FilterTemp.js"></script>
+    <script src="js/tools/JL_CAM_ColorControls.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

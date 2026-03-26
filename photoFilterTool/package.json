@@ -1,0 +1,11 @@
+{
+  "name": "photo-filter-tool",
+  "main": "WebContent/index.html",
+  "window": {
+    "title": "Photo Filter Tool",
+    "width": 1200,
+    "height": 800,
+    "icon": "img/logo.png",
+    "toolbar": false
+  }
+}

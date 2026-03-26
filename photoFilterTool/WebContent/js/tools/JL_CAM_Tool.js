@@ -8,175 +8,15 @@ class JL_CAM_Tool {
         this.imgWidth = 0;
         this.imgHeight = 0;
         
+        // 初始化颜色控制组件
+        this.colorControls = new JL_CAM_ColorControls(this, container);
+        
         this.render();
-        this.initEventListeners();
     }
     
     render() {
-        this.container.innerHTML = `
-            <div class="tool-section">
-                <div style="display: none;">
-                    <table id="colorCorrectionMatrixTable" class="matrix-table">
-                        <caption>Color Correction Matrix</caption>
-                        <tbody></tbody>
-                    </table>
-                    <table id="segDLookupTable" class="matrix-table">
-                        <caption>Segmented Lookup Table</caption>
-                        <tbody></tbody>
-                    </table>
-                </div>
-
-                <!-- Brightness slider -->
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Brightness:</span>
-                        <span id="brightnessValue">0</span>
-                    </div>
-                    <input type="range" id="brightness" class="slider" min="-255" max="255" value="0">
-                </div>
-                
-                <!-- Contrast slider -->
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Contrast:</span>
-                        <span id="contrastValue">1.0</span>
-                    </div>
-                    <input type="range" id="contrast" class="slider" min="0.0" max="2.0" step="0.01" value="1.0">
-                </div>
-                
-                <!-- Saturation slider -->
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Saturation:</span>
-                        <span id="saturationValue">1.0</span>
-                    </div>
-                    <input type="range" id="saturation" class="slider" min="0.0" max="4.0" step="0.01" value="1.0">
-                </div>
-                
-                <!-- HUE slider -->
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Hue:</span>
-                        <span id="hueValue">0</span>
-                    </div>
-                    <input type="range" id="hue" class="slider" min="0" max="360" value="0">
-                </div>
-                
-                <!-- Gamma slider -->
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>GammaR:</span>
-                        <span id="gammaRValues">1.0</span>
-                    </div>
-                    <input type="range" id="gammaR" class="slider" min="0.1" max="2.0" step="0.01" value="1.0" title="Red">
-                </div>
-                
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>GammaG:</span>
-                        <span id="gammaGValues">1.0</span>
-                    </div>
-                    <input type="range" id="gammaG" class="slider" min="0.1" max="2.0" step="0.01" value="1.0" title="Green">
-                </div>
-                
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>GammaB:</span>
-                        <span id="gammaBValues">1.0</span>
-                    </div>
-                    <input type="range" id="gammaB" class="slider" min="0.1" max="2.0" step="0.01" value="1.0" title="Blue">
-                </div>
-                
-                <!-- The Grain effect will cause the camera to lag, so it will not be used temporarily. -->
-                <!-- Grain slider -->
-                <!-- Grain slider -->
-                <div class="slider-group">
-                    <div class="slider-label">
-                        <span>Grain: <span class="tooltip"><i class="fas fa-info-circle"></i><span class="tooltiptext">The higher the grain intensity, the longer it will take to switch filters and take photos.</span></span></span>
-                        <span id="grainValue">0</span>
-                    </div>
-                    <input type="range" id="grain" class="slider" min="0" max="64" step="1" value="0" title="Grain">
-                </div>
-                
-                <!-- Button group -->
-                <div class="button-group">
-                    <button id="loadButton" class="import-button">Load Filter</button>
-                    <input type="file" id="filterUpload" accept=".flt" style="display: none;">
-                    <button id="resetButton" class="reset-button">RESET</button>
-                    <button id="exportButton" class="export-button">Save Filter</button>
-                </div>
-                
-                <!-- Special effect selection -->
-                <div class="radio-group" style="display: none;">
-                    <label>
-                        <input type="radio" name="effect" id="customEffect" value="custom" checked>
-                        Custom
-                    </label>
-                    <label>
-                        <input type="radio" name="effect" id="standardEffect" value="standard">
-                        Standard
-                    </label>
-                    <label>
-                        <input type="radio" name="effect" id="retroEffect" value="retro">
-                        Retro Effect
-                    </label>
-                    <label>
-                        <input type="radio" name="effect" id="grayEffect" value="gray">
-                        Grayscale Effect
-                    </label>
-                </div>
-
-            </div>
-        `;
-    }
-    
-    initEventListeners() {
-        this.brightnessControl = this.container.querySelector('#brightness');
-        this.contrastControl = this.container.querySelector('#contrast');
-        this.saturationControl = this.container.querySelector('#saturation');
-        this.hueControl = this.container.querySelector('#hue');
-        this.gammaRControl = this.container.querySelector('#gammaR');
-        this.gammaGControl = this.container.querySelector('#gammaG');
-        this.gammaBControl = this.container.querySelector('#gammaB');
-        this.grainControl = this.container.querySelector('#grain');
-        
-        this.brightnessValue = this.container.querySelector('#brightnessValue');
-        this.contrastValue = this.container.querySelector('#contrastValue');
-        this.saturationValue = this.container.querySelector('#saturationValue');
-        this.hueValue = this.container.querySelector('#hueValue');
-        this.gammaRValues = this.container.querySelector('#gammaRValues');
-        this.gammaGValues = this.container.querySelector('#gammaGValues');
-        this.gammaBValues = this.container.querySelector('#gammaBValues');
-        this.grainValue = this.container.querySelector('#grainValue');
-        
-        this.resetButton = this.container.querySelector('#resetButton');
-        this.exportButton = this.container.querySelector('#exportButton');
-        this.effectRadios = this.container.querySelectorAll('input[name="effect"]');
-        
-        this.brightnessControl.addEventListener('input', () => this.updateValue(this.brightnessControl, this.brightnessValue));
-        this.contrastControl.addEventListener('input', () => this.updateValue(this.contrastControl, this.contrastValue));
-        this.saturationControl.addEventListener('input', () => this.updateValue(this.saturationControl, this.saturationValue));
-        this.hueControl.addEventListener('input', () => this.updateValue(this.hueControl, this.hueValue));
-        this.gammaRControl.addEventListener('input', () => this.updateGammaValues());
-        this.gammaGControl.addEventListener('input', () => this.updateGammaValues());
-        this.gammaBControl.addEventListener('input', () => this.updateGammaValues());
-        this.grainControl.addEventListener('input', () => this.updateValue(this.grainControl, this.grainValue));
-        
-        this.resetButton.addEventListener('click', () => this.resetFilters());
-        this.exportButton.addEventListener('click', () => this.exportTablesAsTxt());
-        
-        this.effectRadios.forEach(radio => 
-            radio.addEventListener('change', () => this.handleEffectChange())
-        );
-
-        const loadButton = this.container.querySelector('#loadButton');
-        const filterUpload = this.container.querySelector('#filterUpload');
-        
-        loadButton.addEventListener('click', () => {
-            filterUpload.click();
-        });
-        
-        filterUpload.addEventListener('change', (e) => this.handleFilterUpload(e));
+        // 界面渲染已移到 JL_CAM_ColorControls 中
+        // 这里可以添加其他核心功能的初始化
     }
     
     onImageUpload(img) {
@@ -210,29 +50,15 @@ class JL_CAM_Tool {
     }
     
     applyFilters() {
-        [this.gammaRControl, this.gammaGControl, this.gammaBControl].forEach(control => {
-            if (control.value === "1") {
-                control.value = "1.0";
-                const display = control === this.gammaRControl ? this.gammaRValues :
-                            control === this.gammaGControl ? this.gammaGValues : this.gammaBValues;
-                display.textContent = "1.0";
-            }
-        });
         if (!this.processedPixels) return;
     
         const imageData = this.ctx.getImageData(0, 0, this.imgWidth, this.imgHeight);
         const pixels = imageData.data;
         pixels.set(this.processedPixels);
     
-        const brightness = parseFloat(this.brightnessControl.value);
-        const contrast = parseFloat(this.contrastControl.value);
-        const saturation = parseFloat(this.saturationControl.value);
-        const hue = parseFloat(this.hueControl.value);
-        const gammaR = parseFloat(this.gammaRControl.value);
-        const gammaG = parseFloat(this.gammaGControl.value);
-        const gammaB = parseFloat(this.gammaBControl.value);
-        const grain = parseFloat(this.grainControl.value); 
-        const selectedEffect = this.container.querySelector('input[name="effect"]:checked').value;
+        // 从颜色控制器获取当前值
+        const values = this.colorControls.getCurrentValues();
+        const { brightness, contrast, saturation, hue, gammaR, gammaG, gammaB, grain, selectedEffect } = values;
     
         if (window.V105Filters?.makeCCMatrix && window.V105Filters?.applyMatrix) {
             const colorCorrectionMatrix = Array.from({ length: 3 }, () => Array(3).fill(0));
@@ -263,113 +89,77 @@ class JL_CAM_Tool {
         this.ctx.putImageData(imageData, 0, 0);
     }
     
-    updateValue(control, display) {
-        display.textContent = control.value;
-        this.applyFilters();
-    }
-    
-    updateGammaValues() {
-        const selectedEffect = this.container.querySelector('input[name="effect"]:checked').value;
-        
-        if (selectedEffect === 'gray') {
-            const unifiedGammaValue = this.gammaRControl.value;
-            this.gammaGControl.value = unifiedGammaValue;
-            this.gammaBControl.value = unifiedGammaValue;
-            this.gammaGValues.textContent = unifiedGammaValue;
-            this.gammaBValues.textContent = unifiedGammaValue;
-        }
-        
-        this.gammaRValues.textContent = this.gammaRControl.value;
-        this.gammaGValues.textContent = this.gammaGControl.value;
-        this.gammaBValues.textContent = this.gammaBControl.value;
-        
-        this.applyFilters();
-    }
-    
     resetFilters() {
-        this.brightnessControl.value = 0;
-        this.brightnessValue.textContent = "0";
-        
-        this.contrastControl.value = 1.0;
-        this.contrastValue.textContent = "1.0";
-        
-        this.saturationControl.value = 1.0;
-        this.saturationValue.textContent = "1.0";
-        
-        [this.gammaRControl, this.gammaGControl, this.gammaBControl].forEach(control => control.value = 1.0);
-        [this.gammaRValues, this.gammaGValues, this.gammaBValues].forEach(display => display.textContent = "1.0");
-        
-        this.hueControl.value = 0;
-        this.hueValue.textContent = 0;
-        
-        this.grainControl.value = 0;
-        this.grainValue.textContent = "0";
-        
-        this.container.querySelector('#customEffect').checked = true;
-        this.handleEffectChange();
+        this.colorControls.resetControls();
+        this.applyFilters();
     }
     
     handleEffectChange() {
-        const selectedEffect = this.container.querySelector('input[name="effect"]:checked').value;
+        // 安全获取当前选中的效果
+        const checkedEffect = this.container.querySelector('input[name="effect"]:checked');
+        let selectedEffect = 'custom'; // 默认值
         
-        this.brightnessControl.disabled = false;
-        this.contrastControl.disabled = false;
-        this.saturationControl.disabled = false;
-        this.hueControl.disabled = false;
-        this.gammaRControl.disabled = false;
-        this.gammaGControl.disabled = false;
-        this.gammaBControl.disabled = false;
-        this.grainControl.disabled = false;
+        if (checkedEffect) {
+            selectedEffect = checkedEffect.value;
+        }
         
+        // 先确保所有控件启用
+        ['brightness', 'contrast', 'saturation', 'hue', 'gammaR', 'gammaG', 'gammaB', 'grain'].forEach(id => {
+            this.colorControls.disableControl(id, false);
+        });
+        
+        // 仅当选中的是预设效果时，才强制覆盖滑块值
+        // 如果是 'custom'，保持滑块不动（这样在加载FLT文件时不会丢失参数）
         switch (selectedEffect) {
             case 'custom':
+                // 不做任何操作，保留当前的滑块值
                 break;
             case 'standard':
-                this.brightnessControl.value = 0;
-                this.brightnessValue.textContent = "0";
-                this.contrastControl.value = "1.0";
-                this.contrastValue.textContent = "1.0";
-                this.saturationControl.value = "1.0";
-                this.saturationValue.textContent = "1.0";
-                [this.gammaRControl, this.gammaGControl, this.gammaBControl].forEach(control => {
+                this.colorControls.brightnessControl.value = 0;
+                this.colorControls.brightnessValue.textContent = "0";
+                this.colorControls.contrastControl.value = "1.0";
+                this.colorControls.contrastValue.textContent = "1.0";
+                this.colorControls.saturationControl.value = "1.0";
+                this.colorControls.saturationValue.textContent = "1.0";
+                [this.colorControls.gammaRControl, this.colorControls.gammaGControl, this.colorControls.gammaBControl].forEach(control => {
                     control.value = "1.0";
                 });
-                [this.gammaRValues, this.gammaGValues, this.gammaBValues].forEach(display => {
+                [this.colorControls.gammaRValues, this.colorControls.gammaGValues, this.colorControls.gammaBValues].forEach(display => {
                     display.textContent = "1.0";
                 });
-                this.hueControl.value = 0;
-                this.hueValue.textContent = "0";
-                this.grainControl.value = 0;
-                this.grainValue.textContent = "0";
+                this.colorControls.hueControl.value = 0;
+                this.colorControls.hueValue.textContent = "0";
+                this.colorControls.grainControl.value = 0;
+                this.colorControls.grainValue.textContent = "0";
                 break;
             case 'retro':
-                this.brightnessControl.value = 0;
-                this.brightnessValue.textContent = "0";
-                this.contrastControl.value = "1.0";
-                this.contrastValue.textContent = "1.0";
-                [this.gammaRControl, this.gammaGControl, this.gammaBControl].forEach(control => {
+                this.colorControls.brightnessControl.value = 0;
+                this.colorControls.brightnessValue.textContent = "0";
+                this.colorControls.contrastControl.value = "1.0";
+                this.colorControls.contrastValue.textContent = "1.0";
+                [this.colorControls.gammaRControl, this.colorControls.gammaGControl, this.colorControls.gammaBControl].forEach(control => {
                     control.value = "1.0";
                 });
-                [this.gammaRValues, this.gammaGValues, this.gammaBValues].forEach(display => {
+                [this.colorControls.gammaRValues, this.colorControls.gammaGValues, this.colorControls.gammaBValues].forEach(display => {
                     display.textContent = "1.0";
                 });
-                this.brightnessControl.disabled = true;
-                this.contrastControl.disabled = true;
-                this.gammaRControl.disabled = true;
-                this.gammaGControl.disabled = true;
-                this.gammaBControl.disabled = true;
+                this.colorControls.disableControl('brightness', true);
+                this.colorControls.disableControl('contrast', true);
+                this.colorControls.disableControl('gammaR', true);
+                this.colorControls.disableControl('gammaG', true);
+                this.colorControls.disableControl('gammaB', true);
                 break;
             case 'gray':
-                this.saturationControl.value = 0;
-                this.saturationValue.textContent = "0";
-                this.saturationControl.disabled = true;
-                this.hueControl.disabled = true;
-                this.gammaGControl.value = "1.0";
-                this.gammaGValues.textContent = "1.0";
-                this.gammaBControl.value = "1.0";
-                this.gammaBValues.textContent = "1.0";
-                this.gammaGControl.disabled = true;
-                this.gammaBControl.disabled = true;
+                this.colorControls.saturationControl.value = 0;
+                this.colorControls.saturationValue.textContent = "0";
+                this.colorControls.disableControl('saturation', true);
+                this.colorControls.disableControl('hue', true);
+                this.colorControls.gammaGControl.value = "1.0";
+                this.colorControls.gammaGValues.textContent = "1.0";
+                this.colorControls.gammaBControl.value = "1.0";
+                this.colorControls.gammaBValues.textContent = "1.0";
+                this.colorControls.disableControl('gammaG', true);
+                this.colorControls.disableControl('gammaB', true);
                 break;
         }
         
@@ -378,21 +168,16 @@ class JL_CAM_Tool {
     
     async exportTablesAsTxt() {
         try {
+            const values = this.colorControls.getCurrentValues();
+            const { brightness, contrast, saturation, hue, gammaR, gammaG, gammaB, grain } = values;
+            
             const colorCorrectionMatrix = Array.from({ length: 3 }, () => Array(3).fill(0));
             if (window.V105Filters?.makeCCMatrix) {
-                const saturation = parseFloat(this.saturationControl.value);
-                const hue = parseFloat(this.hueControl.value);
                 window.V105Filters.makeCCMatrix(saturation, hue, colorCorrectionMatrix);
             }
             this.updateHiddenTable('colorCorrectionMatrixTable', colorCorrectionMatrix);
     
             const segDLookupTable = Array.from({ length: 256 }, () => Array(3).fill(0));
-            const brightness = parseFloat(this.brightnessControl.value);
-            const contrast = parseFloat(this.contrastControl.value);
-            const gammaR = parseFloat(this.gammaRControl.value);
-            const gammaG = parseFloat(this.gammaGControl.value);
-            const gammaB = parseFloat(this.gammaBControl.value);
-            const grain = parseFloat(this.grainControl.value);
             
             if (window.V105Filters?.makeSegDLookupTable) {
                 window.V105Filters.makeSegDLookupTable(
@@ -405,15 +190,15 @@ class JL_CAM_Tool {
             const segDLookupTableData = this.extractSegTableData('segDLookupTable');
 
             const controlValues = [
-                `brightness:${this.brightnessControl.value}`,
-                `contrast:${this.contrastControl.value}`,
-                `saturation:${this.saturationControl.value}`,
-                `hue:${this.hueControl.value}`,
-                `gammaR:${this.gammaRControl.value}`,
-                `gammaG:${this.gammaGControl.value}`,
-                `gammaB:${this.gammaBControl.value}`,
-                `grain:${this.grainControl.value}`,
-                `effect:${this.container.querySelector('input[name="effect"]:checked').value}`
+                `brightness:${brightness}`,
+                `contrast:${contrast}`,
+                `saturation:${saturation}`,
+                `hue:${hue}`,
+                `gammaR:${gammaR}`,
+                `gammaG:${gammaG}`,
+                `gammaB:${gammaB}`,
+                `grain:${grain}`,
+                `effect:${values.selectedEffect}`
             ].join('\n');
             const content = '\n\n' + `${colorCorrectionMatrixData}\n${segDLookupTableData}\n${grain}\n${controlValues}`;
     
@@ -460,6 +245,8 @@ class JL_CAM_Tool {
 
     updateHiddenTable(tableId, matrix) {
         const table = this.container.querySelector(`#${tableId}`);
+        if (!table) return;
+        
         const tbody = table.querySelector('tbody');
         tbody.innerHTML = '';
 
@@ -476,6 +263,8 @@ class JL_CAM_Tool {
 
     updateHiddenSegTable(tableId, tableData) {
         const table = this.container.querySelector(`#${tableId}`);
+        if (!table) return;
+
         const tbody = table.querySelector('tbody');
         tbody.innerHTML = '';
 
@@ -497,6 +286,8 @@ class JL_CAM_Tool {
 
     extractMatrixData(tableId, scaleFactor = 1024) {
         const table = this.container.querySelector(`#${tableId}`);
+        if (!table) return "";
+
         const rows = table.querySelectorAll('tbody tr');
         let matrixData = "";
 
@@ -511,6 +302,8 @@ class JL_CAM_Tool {
 
     extractSegTableData(tableId) {
         const table = this.container.querySelector(`#${tableId}`);
+        if (!table) return "";
+
         const rows = table.querySelectorAll('tbody tr');
         let segData = "";
         const colorData = {
@@ -696,25 +489,36 @@ class JL_CAM_Tool {
     }
 
     updateControls(filterData) {
-        this.brightnessControl.value = isNaN(filterData.brightness) ? 0 : filterData.brightness;
-        this.contrastControl.value = isNaN(filterData.contrast) ? 1.0 : filterData.contrast;
-        this.saturationControl.value = isNaN(filterData.saturation) ? 1.0 : filterData.saturation;
-        this.hueControl.value = isNaN(filterData.hue) ? 0 : filterData.hue;
-        this.gammaRControl.value = isNaN(filterData.gammaR) ? 1.0 : filterData.gammaR;
-        this.gammaGControl.value = isNaN(filterData.gammaG) ? 1.0 : filterData.gammaG;
-        this.gammaBControl.value = isNaN(filterData.gammaB) ? 1.0 : filterData.gammaB;
-        this.grainControl.value = isNaN(filterData.grain) ? 0 : filterData.grain;
+        // 1. 更新滑块的值
+        this.colorControls.brightnessControl.value = isNaN(filterData.brightness) ? 0 : filterData.brightness;
+        this.colorControls.contrastControl.value = isNaN(filterData.contrast) ? 1.0 : filterData.contrast;
+        this.colorControls.saturationControl.value = isNaN(filterData.saturation) ? 1.0 : filterData.saturation;
+        this.colorControls.hueControl.value = isNaN(filterData.hue) ? 0 : filterData.hue;
+        this.colorControls.gammaRControl.value = isNaN(filterData.gammaR) ? 1.0 : filterData.gammaR;
+        this.colorControls.gammaGControl.value = isNaN(filterData.gammaG) ? 1.0 : filterData.gammaG;
+        this.colorControls.gammaBControl.value = isNaN(filterData.gammaB) ? 1.0 : filterData.gammaB;
+        this.colorControls.grainControl.value = isNaN(filterData.grain) ? 0 : filterData.grain;
         
-        this.brightnessValue.textContent = this.brightnessControl.value;
-        this.contrastValue.textContent = this.contrastControl.value;
-        this.saturationValue.textContent = this.saturationControl.value;
-        this.hueValue.textContent = this.hueControl.value;
-        this.gammaRValues.textContent = this.gammaRControl.value;
-        this.gammaGValues.textContent = this.gammaGControl.value;
-        this.gammaBValues.textContent = this.gammaBControl.value;
-        this.grainValue.textContent = this.grainControl.value;
+        // 2. 更新显示的数值文本 (修复了原始代码中的 saturationControl.textContent 错误)
+        this.colorControls.brightnessValue.textContent = this.colorControls.brightnessControl.value;
+        this.colorControls.contrastValue.textContent = this.colorControls.contrastControl.value;
+        this.colorControls.saturationValue.textContent = this.colorControls.saturationControl.value;
+        this.colorControls.hueValue.textContent = this.colorControls.hueControl.value;
+        this.colorControls.gammaRValues.textContent = this.colorControls.gammaRControl.value;
+        this.colorControls.gammaGValues.textContent = this.colorControls.gammaGControl.value;
+        this.colorControls.gammaBValues.textContent = this.colorControls.gammaBControl.value;
+        this.colorControls.grainValue.textContent = this.colorControls.grainControl.value;
 
-        this.container.querySelector('#customEffect').checked = true;
+        // 3. 将 UI 状态切换为 Custom，但不强制覆盖滑块值
+        // 查找名为 "effect" 的单选按钮组
+        const customRadio = this.container.querySelector('input[name="effect"][value="custom"]');
+        
+        if (customRadio) {
+            customRadio.checked = true;
+        }
+        
+        // 触发 handleEffectChange 以确保 UI 状态正确（例如启用所有禁用的滑块）
+        // 修改后的 handleEffectChange 在 'custom' 分支不会修改滑块值，所以是安全的
         this.handleEffectChange();
     }
 
@@ -745,7 +549,7 @@ class JL_CAM_Tool {
         }
         
         if (window.V105Filters?.applyGrainLevelNoise) {
-            const grain = parseFloat(this.grainControl.value);
+            const grain = parseFloat(this.colorControls.grainControl.value);
             window.V105Filters.applyGrainLevelNoise(pixels, this.imgWidth, this.imgHeight, 
                                                   grain, this.imgWidth, this.imgHeight);
         }

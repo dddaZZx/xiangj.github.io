@@ -1,3 +1,5 @@
+/* style.css - 通用样式 */
+
 /* 全局样式 - 深色主题 */
 :root {
   --primary-color: #6c5ce7;
@@ -63,27 +65,6 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.subtitle {
-  color: var(--muted-text);
-  font-size: 14px;
-  margin-bottom: 20px;
-}
-
-/* 右侧面板样式 */
-.right-panel {
-  background-color: rgba(30, 39, 46, 0.8);
-  border-radius: var(--border-radius);
-  padding: 25px;
-  box-shadow: var(--box-shadow);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-}
-
-/* 标题样式 */
 .section-title {
   font-size: 24px;
   font-weight: 600;
@@ -104,26 +85,130 @@ body {
   background-color: var(--primary-color);
 }
 
-.preview-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--accent-color);
+/* 右侧面板样式 */
+.right-panel {
+  background-color: rgba(30, 39, 46, 0.8);
+  border-radius: var(--border-radius);
+  padding: 25px;
+  box-shadow: var(--box-shadow);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 预览头部 */
+.preview-header {
   margin-bottom: 25px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  text-align: center;
   position: relative;
 }
 
-.preview-title::after {
+.preview-title-wrapper {
+  text-align: center;
+  position: relative;
+  padding-bottom: 15px;
+}
+
+.upload-controls {
+  display: inline-flex;
+  align-items: center;
+}
+
+#image-upload {
+  display: none;
+}
+
+.upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--light-text);
+  background: rgba(108, 92, 231, 0.12);
+  border: 1px solid rgba(108, 92, 231, 0.25);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.22s ease;
+  backdrop-filter: blur(4px);
+  white-space: nowrap;
+}
+
+.upload-button:hover {
+  background: rgba(108, 92, 231, 0.20);
+  border-color: rgba(108, 92, 231, 0.40);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.upload-button:active {
+  transform: translateY(0);
+}
+
+.upload-button i {
+  font-size: 1.05em;
+  opacity: 0.9;
+}
+
+/* 分割横线 - 与 Filter Studio 一致 */
+.preview-title-wrapper::after {
   content: '';
   position: absolute;
-  bottom: -1px;
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
   width: 60px;
   height: 2px;
   background-color: var(--primary-color);
+}
+
+/* 画布区域 */
+.preview-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative; /* 新增：让子元素可以绝对定位 */
+}
+
+.canvas-container {
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - 220px);
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  background-color: var(--darker-bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.canvas-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--darker-bg);
+  z-index: -1;
+}
+
+#image-canvas {
+  background-image: url('../../img/upload.png');
+  background-size: 30%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: var(--darker-bg);
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
 }
 
 /* 工具选择器 */
@@ -164,115 +249,10 @@ body {
   box-shadow: 0 0 0 2px var(--primary-color);
 }
 
-/* 上传区域 */
-.upload-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex-grow: 1;
-  margin-top: 20px;
-}
-
-#image-upload {
-  display: none;
-}
-
-/* 上传按钮样式 */
-.upload-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 30px;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  color: white;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  margin-bottom: 30px;
-  font-size: 16px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
-  position: relative;
-  overflow: hidden;
-}
-
-.upload-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: all 0.5s ease;
-}
-
-.upload-button:hover::before {
-  left: 100%;
-}
-
-.upload-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(108, 92, 231, 0.4);
-}
-
-.upload-button:active {
-  transform: translateY(0);
-}
-
-.upload-button:disabled {
-  background: #636e72 !important;
-  cursor: not-allowed;
-  opacity: 0.7;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-/* 画布容器 */
-.canvas-container {
-  width: 100%;
-  height: 100%;
-  max-height: calc(100vh - 200px);
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow);
-  background-color: var(--darker-bg);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.canvas-background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: var(--darker-bg);
-  z-index: -1;
-}
-
-#image-canvas {
-  background-image: url('../../img/upload.png');
-  background-size: 30%;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-color: var(--darker-bg);
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: contain;
-}
-
 /* 工具内容区域 */
 #tool-container {
   flex: 1;
   overflow-y: auto;
-  padding-right: 10px;
   scrollbar-width: thin;
   scrollbar-color: var(--primary-color) transparent;
 }
@@ -288,353 +268,6 @@ body {
 #tool-container::-webkit-scrollbar-thumb {
   background-color: var(--primary-color);
   border-radius: 3px;
-}
-
-.tool-section {
-  background-color: rgba(45, 52, 54, 0.6);
-  border-radius: var(--border-radius);
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.tool-section h3 {
-  margin: 0 0 20px 0;
-  color: var(--accent-color);
-  font-size: 18px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* 滑块组样式 */
-.slider-group {
-  margin-bottom: 20px;
-}
-
-.slider-label {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  font-size: 14px;
-  color: var(--muted-text);
-}
-
-.slider-label span:first-child {
-  font-weight: 500;
-}
-
-.slider-value {
-  color: var(--light-text);
-  min-width: 40px;
-  text-align: right;
-  font-weight: 500;
-}
-
-.slider {
-  width: 100%;
-  height: 8px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: rgba(255, 255, 255, 0.1);
-  outline: none;
-  border-radius: 4px;
-  margin: 10px 0;
-  transition: all 0.3s ease;
-}
-
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--primary-color);
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-.slider::-webkit-slider-thumb:hover {
-  transform: scale(1.1);
-  background: var(--secondary-color);
-}
-
-.slider:disabled {
-  opacity: 0.5;
-}
-
-.slider:disabled::-webkit-slider-thumb {
-  background: #636e72;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-/* 按钮组基础样式 */
-.button-group {
-  display: flex;
-  gap: 10px;
-  margin: 20px 0;
-  justify-content: space-between;
-}
-
-.button-group button {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: var(--border-radius);
-  color: white;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.button-group button i {
-  margin-right: 6px;
-}
-
-.button-group button::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: all 0.5s ease;
-}
-
-.button-group button:hover::after {
-  left: 100%;
-}
-
-/* 按钮颜色 */
-.button-group button:not(.import-button):not(.reset-button):not(.export-button) {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-}
-
-.button-group button.import-button {
-  background: linear-gradient(135deg, #00b894 0%, #55efc4 100%);
-}
-
-.button-group button.reset-button {
-  background: linear-gradient(135deg, #e17055 0%, #fab1a0 100%);
-}
-
-.button-group button.export-button {
-  background: linear-gradient(135deg, #0984e3 0%, #74b9ff 100%);
-}
-
-/* 按钮悬停效果 */
-.button-group button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.button-group button:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-/* 禁用状态 */
-.button-group button:disabled {
-  background: #636e72 !important;
-  cursor: not-allowed;
-  opacity: 0.7;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-/* 单选按钮组样式 */
-.radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 20px 0;
-}
-
-.radio-group label {
-  display: flex;
-  align-items: center;
-  font-size: 14px;
-  cursor: pointer;
-  padding: 10px 15px;
-  border-radius: var(--border-radius);
-  background-color: rgba(255, 255, 255, 0.05);
-  transition: all 0.2s ease;
-  color: var(--muted-text);
-}
-
-.radio-group label:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: var(--light-text);
-}
-
-.radio-group input[type="radio"] {
-  margin-right: 10px;
-  accent-color: var(--primary-color);
-}
-
-.radio-group:disabled label {
-  color: #636e72;
-  cursor: not-allowed;
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-/* 隐藏的矩阵表格样式 */
-.matrix-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 15px 0;
-  font-size: 12px;
-}
-
-.matrix-table caption {
-  font-weight: 500;
-  margin-bottom: 8px;
-  text-align: left;
-  font-size: 13px;
-  color: var(--muted-text);
-}
-
-.matrix-table td {
-  padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  text-align: center;
-  color: var(--muted-text);
-}
-
-/* 空状态样式 */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--muted-text);
-}
-
-.empty-state i {
-  font-size: 48px;
-  margin-bottom: 20px;
-  color: rgba(255, 255, 255, 0.1);
-}
-
-.empty-state p {
-  font-size: 16px;
-  margin-bottom: 10px;
-}
-
-.tool-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  color: var(--muted-text);
-}
-
-.tool-loading i {
-  margin-right: 10px;
-  font-size: 20px;
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .container {
-      grid-template-columns: 1fr;
-      height: auto;
-      padding: 15px;
-  }
-  
-  .left-panel {
-      width: 100%;
-      margin-bottom: 20px;
-  }
-  
-  .right-panel {
-      padding: 15px;
-  }
-  
-  .canvas-container {
-      max-height: 60vh;
-  }
-}
-
-/* 动画效果 */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.tool-section {
-  animation: fadeIn 0.3s ease-out forwards;
-}
-
-/* 工具提示样式 - 新增和改进的部分 */
-/* 修改后的工具提示样式 */
-.tooltip {
-  position: relative;
-  display: inline-block;
-  margin-left: 5px;
-  cursor: help;
-}
-
-.tooltip .fa-info-circle {
-  color: var(--accent-color);
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.tooltip:hover .fa-info-circle {
-  color: var(--primary-color);
-}
-
-.tooltip .tooltiptext {
-  visibility: hidden;
-  width: 220px;
-  background-color: var(--darker-bg);
-  color: var(--light-text);
-  text-align: left;
-  border-radius: var(--border-radius);
-  padding: 12px;
-  position: absolute;
-  z-index: 1000;
-  bottom: 100%;
-  left: 0; /* 改为从左侧顶点开始 */
-  margin-bottom: 10px; /* 与图标保持距离 */
-  opacity: 0;
-  transition: opacity 0.3s;
-  font-size: 13px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: var(--box-shadow);
-  line-height: 1.4;
-  white-space: normal;
-  word-wrap: break-word;
-}
-
-.tooltip .tooltiptext::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 15px; /* 箭头位置调整 */
-  margin-left: -5px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: var(--darker-bg) transparent transparent transparent;
-}
-
-.tooltip:hover .tooltiptext {
-  visibility: visible;
-  opacity: 1;
 }
 
 /* 占位内容样式 */
@@ -663,4 +296,67 @@ body {
 .placeholder-content small {
   font-size: 12px;
   opacity: 0.7;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .container {
+      grid-template-columns: 1fr;
+      height: auto;
+      padding: 15px;
+  }
+  
+  .left-panel {
+      width: 100%;
+      margin-bottom: 20px;
+  }
+  
+  .right-panel {
+      padding: 15px;
+  }
+  
+  .canvas-container {
+      max-height: 60vh;
+  }
+  
+  .upload-button {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+}
+
+/* 悬浮对比工具栏 */
+.compare-toolbar {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    z-index: 20;
+    pointer-events: auto;
+}
+
+#compare-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(30, 39, 46, 0.85);
+    border: 1px solid rgba(108, 92, 231, 0.4);
+    color: #a29bfe;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.18s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(6px);
+}
+
+#compare-btn:hover {
+    background: rgba(45, 52, 54, 0.95);
+    transform: scale(1.08);
+    box-shadow: 0 6px 16px rgba(108, 92, 231, 0.3);
+}
+
+#compare-btn:active {
+    transform: scale(0.96);
 }
