@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const toolContainer = document.getElementById('tool-container');
     const imageUpload = document.getElementById('image-upload');
     const canvas = document.getElementById('image-canvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const canvasBackground = document.querySelector('.canvas-background');
     const placeholderContent = document.querySelector('.placeholder-content');
     
@@ -115,51 +115,87 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    /**
-     * 压缩图片到指定大小以下
+        /**
+     * 压缩图片到指定大小以下 (数学公式一步到位版)
      * @param {Image} img - 原始图片对象
      * @param {number} maxSize - 最大字节数
      * @returns {Promise<Image>} - 压缩后的图片
      */
     async function compressImage(img, maxSize) {
-        let quality = 0.9;
-        let compressedDataUrl;
+        const testQuality = 0.7; // 固定使用 0.7 作为基准质量，兼顾清晰度和体积计算
+        
+        const testCanvas = document.createElement('canvas');
+        const testCtx = testCanvas.getContext('2d');
+        
+        let baseWidth = img.width;
+        let baseHeight = img.height;
+        
+        // 防御机制：对于超高分辨率图片（如 7000x5000），
+        // 连做一次基准 toBlob 都会非常慢，所以先粗略缩小到 800万像素以内做测试
+        const maxTestPixels = 8 * 1000 * 1000; 
+        if (baseWidth * baseHeight > maxTestPixels) {
+            const roughScale = Math.sqrt(maxTestPixels / (baseWidth * baseHeight));
+            baseWidth = Math.floor(baseWidth * roughScale);
+            baseHeight = Math.floor(baseHeight * roughScale);
+        }
 
-        const offscreenCanvas = document.createElement('canvas');
-        const offscreenCtx = offscreenCanvas.getContext('2d');
+        // 第 1 次 toBlob：获取基准数据
+        testCanvas.width = baseWidth;
+        testCanvas.height = baseHeight;
+        testCtx.drawImage(img, 0, 0, baseWidth, baseHeight);
+        
+        const baseBlob = await new Promise(resolve => testCanvas.toBlob(resolve, 'image/jpeg', testQuality));
+        
+        // 如果基准测试就已经满足要求了，直接返回
+        if (baseBlob.size <= maxSize) {
+            return createImageFromBlob(baseBlob);
+        }
 
-        // 初始尺寸
-        offscreenCanvas.width = img.width;
-        offscreenCanvas.height = img.height;
-        offscreenCtx.drawImage(img, 0, 0);
+        // 核心数学计算：算出在 testQuality 下，每个像素平均占用多少字节
+        const bytesPerPixel = baseBlob.size / (baseWidth * baseHeight);
+        
+        // 计算为了达到 maxSize，我们最多能有多少个像素 (乘 0.9 是留 10% 的安全余量)
+        const targetPixels = (maxSize * 0.9) / bytesPerPixel;
+        
+        // 根据原图像素数，计算需要缩放的比例
+        const finalScale = Math.sqrt(targetPixels / (img.width * img.height));
+        
+        // 计算最终确定的宽高 (最小限制 50px，防止极端情况)
+        let finalWidth = Math.max(50, Math.floor(img.width * finalScale));
+        let finalHeight = Math.max(50, Math.floor(img.height * finalScale));
 
-        do {
-            compressedDataUrl = offscreenCanvas.toDataURL('image/jpeg', quality);
-            quality -= 0.1;
+        // 第 2 次 toBlob：使用计算出的精确尺寸生成最终图片
+        const finalCanvas = document.createElement('canvas');
+        const finalCtx = finalCanvas.getContext('2d');
+        finalCanvas.width = finalWidth;
+        finalCanvas.height = finalHeight;
+        finalCtx.drawImage(img, 0, 0, finalWidth, finalHeight);
+        
+        let finalBlob = await new Promise(resolve => finalCanvas.toBlob(resolve, 'image/jpeg', testQuality));
 
-            if (quality <= 0.1) break; // 防止无限循环
+        // 第 3 次 (极少数情况)：如果因为图片色彩极多或 JPEG 算法波动刚好超了几 KB，稍微降一点质量兜底
+        let currentQuality = testQuality;
+        while (finalBlob.size > maxSize && currentQuality > 0.4) {
+            currentQuality -= 0.1;
+            finalBlob = await new Promise(resolve => finalCanvas.toBlob(resolve, 'image/jpeg', currentQuality));
+        }
 
-            // 创建临时 Image 来检查大小
+        return createImageFromBlob(finalBlob);
+    }
+
+    /**
+     * 辅助函数：从 Blob 创建 Image 对象
+     */
+    function createImageFromBlob(blob) {
+        return new Promise((resolve, reject) => {
             const tempImg = new Image();
-            tempImg.src = compressedDataUrl;
-            await new Promise(resolve => tempImg.onload = resolve);
-
-            // 如果还是太大，缩小分辨率
-            if ((compressedDataUrl.length * 3 / 4) > maxSize && quality < 0.3) {
-                const scale = Math.sqrt(maxSize / (compressedDataUrl.length * 3 / 4)) * 0.9;
-                offscreenCanvas.width = img.width * scale;
-                offscreenCanvas.height = img.height * scale;
-                offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-                offscreenCtx.drawImage(img, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
-                quality = 0.85; // 重置质量
-            }
-        } while ((compressedDataUrl.length * 3 / 4) > maxSize && quality > 0.1);
-
-        const compressedImg = new Image();
-        compressedImg.src = compressedDataUrl;
-        await new Promise(resolve => compressedImg.onload = resolve);
-
-        return compressedImg;
+            tempImg.src = URL.createObjectURL(blob);
+            tempImg.onload = () => {
+                URL.revokeObjectURL(tempImg.src); // 释放内存
+                resolve(tempImg);
+            };
+            tempImg.onerror = reject;
+        });
     }
 
     function loadTool(toolName) {
