@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JL2058 Border Effect</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app">
+    <aside class="toolbar">
+        <div class="toolbar-header">Border Effects</div>
+        <div class="effect-list" id="effectList"></div>
+        <div class="debug-panel">
+            <div class="debug-header">
+                <span class="debug-label">Debug</span>
+                <div class="debug-actions">
+                    <button class="debug-btn" id="debugCopy">Copy</button>
+                    <button class="debug-btn" id="debugClear">Clear</button>
+                </div>
+            </div>
+            <textarea class="debug-log" id="debugLog" readonly></textarea>
+        </div>
+    </aside>
+    <main class="preview" id="previewArea">
+        <canvas id="previewCanvas"></canvas>
+    </main>
+</div>
+
+<!-- 导入自定义效果的模态弹窗 -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            Add New Effect
+            <div class="modal-step" id="modalStep">Step 1 of 2</div>
+        </div>
+        <div class="modal-body">
+            <div class="modal-hint" id="modalHint">Select the color image for the border effect.</div>
+            <div class="drop-zone" id="dropZone">
+                <i class="fa-solid fa-palette"></i>
+                <span>Click or drag to select color image</span>
+            </div>
+            <div class="modal-preview" id="step1Preview" style="display:none">
+                <img src="" alt="Color preview">
+                <div class="preview-label">Color image</div>
+            </div>
+            <div class="modal-preview" id="step2Preview" style="display:none">
+                <img src="" alt="Mask preview">
+                <div class="preview-label">Grayscale mask</div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" id="modalBack" style="display:none">
+                <i class="fa-solid fa-arrow-left"></i> Back
+            </button>
+            <button class="btn" id="modalCancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- 校验失败错误弹窗 -->
+<div class="modal-overlay" id="errorOverlay">
+    <div class="modal-box">
+        <div class="modal-header" style="color: #e05252;">
+            <i class="fa-solid fa-triangle-exclamation" style="margin-right:8px;"></i>Validation Failed
+        </div>
+        <div class="modal-body">
+            <div class="error-list" id="errorList"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" id="errorOk">OK</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('debugCopy').addEventListener('click', function() {
+    var el = document.getElementById('debugLog');
+    el.select();
+    document.execCommand('copy');
+});
+document.getElementById('debugClear').addEventListener('click', function() {
+    document.getElementById('debugLog').value = '';
+});
+</script>
+<script src="js/main.js"></script>
+</body>
+</html>

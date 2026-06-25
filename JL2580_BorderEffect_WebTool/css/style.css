@@ -1,0 +1,478 @@
+/* ================================================================
+   JL2058 Border Effect WebTool - Stylesheet
+   
+   架构说明：
+   - 左侧 .toolbar 固定宽度，包含效果列表 + 调试面板
+   - 右侧 .preview 弹性填充，棋盘格背景显示透明区域
+   - 模态弹窗用于导入流程和错误提示
+   ================================================================ */
+
+:root {
+    --bg: #0e0e0e;
+    --bg-raised: #151515;
+    --card: #1c1c1c;
+    --card-hover: #252525;
+    --border: #2a2a2a;
+    --border-light: #363636;
+    --fg: #e4e4e4;
+    --fg-secondary: #a0a0a0;
+    --muted: #5e5e5e;
+    --accent: #d4a24e;
+    --accent-glow: rgba(212, 162, 78, 0.12);
+    --accent-hover: #e0b35e;
+    --danger: #e05252;
+    --success: #4caf7d;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body, html {
+    height: 100%;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ====== 整体布局：左工具栏 + 右预览区 ====== */
+.app {
+    display: flex;
+    height: 100vh;
+}
+
+/* ====== 左侧工具栏 ====== */
+.toolbar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--bg-raised);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+}
+
+.toolbar-header {
+    padding: 18px 18px 12px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+}
+
+/* ====== 效果列表区域（包含预设效果 + Add New Effect 按钮） ====== */
+.effect-list {
+    padding: 0 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* 单个效果项 */
+.effect-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    background: var(--card);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+}
+
+/* 选中态左侧金色竖条 */
+.effect-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 0 2px 2px 0;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+}
+
+.effect-item:hover {
+    background: var(--card-hover);
+    border-color: var(--border-light);
+}
+
+.effect-item.active {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+}
+
+.effect-item.active::before { opacity: 1; }
+
+.effect-thumb {
+    width: 52px;
+    height: 36px;
+    border-radius: 5px;
+    background: #111;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+}
+
+.effect-item.active .effect-thumb {
+    border-color: rgba(212, 162, 78, 0.4);
+}
+
+.effect-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.effect-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg);
+}
+
+.effect-desc {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Space Grotesk', monospace;
+}
+
+/* "No Effect" 的图标 */
+.no-effect-icon {
+    width: 52px;
+    height: 36px;
+    border-radius: 5px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #444;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+/* "Add New Effect" 虚线按钮 —— 和效果项同级 */
+.add-effect-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    border: 2px dashed #333;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    user-select: none;
+}
+
+.add-effect-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(212, 162, 78, 0.06);
+}
+
+.add-effect-btn i { font-size: 13px; }
+
+/* ====== 调试面板（工具栏底部，低存在感） ====== */
+.debug-panel {
+    padding: 8px 10px 10px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.debug-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.debug-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #444;
+}
+
+.debug-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.debug-btn {
+    padding: 2px 6px;
+    border: 1px solid #222;
+    border-radius: 3px;
+    background: #181818;
+    color: #555;
+    font-size: 9px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.debug-btn:hover {
+    background: #222;
+    color: #888;
+    border-color: #333;
+}
+
+.debug-log {
+    width: 100%;
+    height: 100px;
+    background: #0c0c0c;
+    border: 1px solid #1e1e1e;
+    border-radius: 4px;
+    padding: 5px 8px;
+    color: #555;
+    font-family: 'Space Grotesk', monospace;
+    font-size: 9.5px;
+    line-height: 1.45;
+    resize: none;
+    outline: none;
+    overflow-y: auto;
+}
+
+.debug-log:focus {
+    border-color: #2a2a2a;
+}
+
+.debug-log::-webkit-scrollbar { width: 3px; }
+.debug-log::-webkit-scrollbar-track { background: transparent; }
+.debug-log::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+
+/* ====== 右侧预览区（棋盘格背景） ====== */
+.preview {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    background-color: #131313;
+    /* CSS 棋盘格，表示透明区域 */
+    background-image:
+        linear-gradient(45deg, #191919 25%, transparent 25%),
+        linear-gradient(-45deg, #191919 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #191919 75%),
+        linear-gradient(-45deg, transparent 75%, #191919 75%);
+    background-size: 24px 24px;
+    background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+}
+
+#previewCanvas {
+    display: block;
+    background: #000;
+    border-radius: 3px;
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.3),
+        0 12px 48px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+/* ====== 模态弹窗（导入 + 错误提示共用） ====== */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay.visible { display: flex; }
+
+.modal-box {
+    width: 420px;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 20px 24px 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--fg);
+}
+
+.modal-step {
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+}
+
+.modal-body {
+    padding: 20px 24px;
+}
+
+.modal-hint {
+    font-size: 13px;
+    color: #a0a0a0;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+.drop-zone {
+    border: 2px dashed #333;
+    border-radius: 10px;
+    padding: 28px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.drop-zone:hover {
+    border-color: var(--accent);
+    background: rgba(212, 162, 78, 0.05);
+}
+
+.drop-zone i {
+    font-size: 22px;
+    color: #444;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.drop-zone span {
+    font-size: 12px;
+    color: #5e5e5e;
+}
+
+.modal-preview {
+    margin-top: 12px;
+    text-align: center;
+}
+
+.modal-preview img {
+    max-width: 100%;
+    max-height: 140px;
+    border-radius: 6px;
+    border: 1px solid #2a2a2a;
+}
+
+.modal-preview .preview-label {
+    font-size: 10px;
+    color: #5e5e5e;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 6px;
+}
+
+.modal-footer {
+    padding: 0 24px 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.modal-footer .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    background: #1c1c1c;
+    color: #e4e4e4;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.modal-footer .btn:hover {
+    background: #252525;
+    border-color: #363636;
+}
+
+.modal-footer .btn:active {
+    transform: scale(0.97);
+}
+
+.modal-footer .btn i {
+    font-size: 13px;
+}
+
+/* ====== 校验错误列表 ====== */
+.error-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.error-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #1f1515;
+    border: 1px solid rgba(224, 82, 82, 0.2);
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: #d4a0a0;
+    line-height: 1.5;
+}
+
+.error-item i {
+    color: #e05252;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.error-item code {
+    display: inline-block;
+    padding: 1px 6px;
+    background: #2a1a1a;
+    border: 1px solid #3a2a2a;
+    border-radius: 4px;
+    font-family: 'Space Grotesk', monospace;
+    font-size: 11px;
+    color: #e8b0b0;
+}
+
+.error-item .expected {
+    color: #7a9a7a;
+    font-size: 11px;
+    display: block;
+    margin-top: 4px;
+}
+
+/* ====== 滚动条 ====== */
+.toolbar::-webkit-scrollbar { width: 4px; }
+.toolbar::-webkit-scrollbar-track { background: transparent; }
+.toolbar::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+.toolbar::-webkit-scrollbar-thumb:hover { background: #444; }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
