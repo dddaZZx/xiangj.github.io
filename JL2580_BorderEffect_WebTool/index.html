@@ -26,37 +26,91 @@
         </div>
     </aside>
     <main class="preview" id="previewArea">
-        <canvas id="previewCanvas"></canvas>
+        <div class="photo-controls">
+            <button class="btn-add-photo" id="btnAddPhoto">
+                <i class="fa-solid fa-plus"></i> Add Preview Photo
+            </button>
+            <button class="btn-export" id="btnExport" disabled>
+                <i class="fa-solid fa-download"></i> Export Resources
+            </button>
+        </div>
+        <div class="preview-frame">
+            <button class="btn-photo-switch btn-prev" id="btnPrevPhoto" style="display:none">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <canvas id="previewCanvas"></canvas>
+            <button class="btn-photo-switch btn-next" id="btnNextPhoto" style="display:none">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
     </main>
 </div>
 
 <!-- 导入自定义效果的模态弹窗 -->
 <div class="modal-overlay" id="modalOverlay">
     <div class="modal-box">
-        <div class="modal-header">
-            Add New Effect
-            <div class="modal-step" id="modalStep">Step 1 of 2</div>
+        <!-- 区域1: 标题和步骤指示器 -->
+        <div class="modal-header-section">
+            <div class="modal-title">Add New Effect</div>
+            <div class="modal-stepper" aria-label="Import steps">
+                <div class="step-item active" data-step="1">
+                    <div class="step-badge">1</div>
+                    <div class="step-copy">
+                        <div class="step-title">Select color image</div>
+                        <div class="step-desc">Upload the color image</div>
+                    </div>
+                </div>
+                <div class="step-item disabled" data-step="2">
+                    <div class="step-badge">2</div>
+                    <div class="step-copy">
+                        <div class="step-title">Select grayscale mask</div>
+                        <div class="step-desc">Upload the mask image</div>
+                    </div>
+                </div>
+            </div>
         </div>
+        
+        <!-- 区域2: 编辑区（提示文本 + 上传区域） -->
         <div class="modal-body">
             <div class="modal-hint" id="modalHint">Select the color image for the border effect.</div>
-            <div class="drop-zone" id="dropZone">
-                <i class="fa-solid fa-palette"></i>
-                <span>Click or drag to select color image</span>
+            
+            <!-- Step 1: Color Upload Area -->
+            <div class="upload-section" id="uploadSection1">
+                <div class="modal-preview" id="step1Preview" style="display: none;">
+                    <img src="" alt="Color preview">
+                    <div class="preview-label">Color image</div>
+                </div>
+                <div class="drop-zone" id="dropZone1">
+                    <i class="fa-solid fa-palette"></i>
+                    <span>Click or drag to select color image</span>
+                </div>
             </div>
-            <div class="modal-preview" id="step1Preview" style="display:none">
-                <img src="" alt="Color preview">
-                <div class="preview-label">Color image</div>
-            </div>
-            <div class="modal-preview" id="step2Preview" style="display:none">
-                <img src="" alt="Mask preview">
-                <div class="preview-label">Grayscale mask</div>
+            
+            <!-- Step 2: Mask Upload Area -->
+            <div class="upload-section" id="uploadSection2">
+                <div class="modal-preview" id="step2Preview" style="display: none;">
+                    <img src="" alt="Mask preview">
+                    <div class="preview-label">Grayscale mask</div>
+                </div>
+                <div class="drop-zone disabled" id="dropZone2">
+                    <i class="fa-solid fa-circle-half-stroke"></i>
+                    <span>Click or drag to select mask image</span>
+                </div>
+                <button class="btn-auto-mask" id="autoMaskBtn" disabled>
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Generate mask automatically
+                </button>
+                <div class="auto-mask-error" id="autoMaskError"></div>
             </div>
         </div>
+        
+        <!-- 区域3: 底部按钮 -->
         <div class="modal-footer">
-            <button class="btn" id="modalBack" style="display:none">
-                <i class="fa-solid fa-arrow-left"></i> Back
+            <button class="btn btn-primary" id="modalOk" disabled>
+                <i class="fa-solid fa-check"></i> OK
             </button>
-            <button class="btn" id="modalCancel">Cancel</button>
+            <button class="btn" id="modalCancel">
+                <i class="fa-solid fa-xmark"></i> Cancel
+            </button>
         </div>
     </div>
 </div>
@@ -76,6 +130,7 @@
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 document.getElementById('debugCopy').addEventListener('click', function() {
     var el = document.getElementById('debugLog');

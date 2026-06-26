@@ -50,8 +50,9 @@
     // ====== 配置 ======
     var RES_DIR      = 'Resources/';   // 素材目录
     var TOLERANCE    = 2;             // #1c1c1c 匹配容差（JPEG 有损压缩后像素值会偏移）
-    var BORDER_LIST  = ['border_1.jpg', 'border_2.jpg', 'border_3.jpg']; // 预设边框文件名
     var DEFAULT_PHOTO = '1.JPG';      // 默认原图文件名
+    var MAX_BORDER_ATTEMPTS = 99;     // 自动检测边框文件的最大尝试次数
+    var CONSECUTIVE_FAILURE_THRESHOLD = 3; // 连续失败阈值
 
     // ====== DOM 引用 ======
     var effectListEl = document.getElementById('effectList');
@@ -64,6 +65,16 @@
     var currentEffect = 'none';       // 当前选中的效果 ID（'none' 或文件名或 'custom_N'）
     var mainImg       = null;         // 当前原图 Image 对象
     var customCount   = 0;            // 用户导入效果的自增编号
+    var effectItemsContainer = null;  // 预设 + 自定义效果项的容器
+    
+    // ====== 预览图管理 ======
+    var photoList = [
+        { type: 'default', src: RES_DIR + DEFAULT_PHOTO, img: null }
+    ];
+    var currentPhotoIndex = 0;        // 当前显示的预览图索引
+    var MAX_USER_PHOTOS = 10;         // 用户上传照片上限
+    var MAX_EFFECTS = 20;             // 效果按钮上限
+    var isLoadingPhoto = false;       // 照片加载锁，防止竞态
 
     // ====== 缓存 ======
     // imageCache: { 文件名: Image } —— 避免重复加载同一张图
@@ -71,6 +82,9 @@
     // processedBorders: { 效果ID: { colorCvs: Canvas, maskCvs: Canvas, filtered: Number } }
     // 预处理结果在启动时计算一次，切换效果时直接复用
     var processedBorders = {};
+    // renderedCache: { 效果ID: Canvas } —— 记录已经合成好的最终预览结果，避免重复像素混合
+    var renderedCache = {};
+    var previewTransitionTimer = null;
 
     // ================================================================
     //  调试日志
@@ -81,6 +95,198 @@
         var ts = String(t.getMinutes()).padStart(2, '0') + ':' + String(t.getSeconds()).padStart(2, '0');
         debugLog.value += '[' + ts + '] ' + msg + '\n';
         debugLog.scrollTop = debugLog.scrollHeight;
+    }
+
+    // ================================================================
+    //  获取缓存键（效果 + 照片索引）
+    // ================================================================
+    function getCacheKey() {
+        return currentEffect + '_' + currentPhotoIndex;
+    }
+
+    // ================================================================
+    //  图片压缩与裁切（4:3）
+    // ================================================================
+    function compressAndCrop(file) {
+        return new Promise(function(resolve, reject) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var img = new Image();
+                img.onload = function() {
+                    var maxWidth = 1920;
+                    var maxHeight = 1440;
+                    
+                    var width = img.width;
+                    var height = img.height;
+                    
+                    if (width > maxWidth || height > maxHeight) {
+                        var scale = Math.min(maxWidth / width, maxHeight / height);
+                        width = Math.floor(width * scale);
+                        height = Math.floor(height * scale);
+                    }
+                    
+                    var targetRatio = 4 / 3;
+                    var srcRatio = img.width / img.height;
+                    
+                    var cropX, cropY, cropWidth, cropHeight;
+                    
+                    if (srcRatio > targetRatio) {
+                        cropHeight = img.height;
+                        cropWidth = Math.floor(cropHeight * targetRatio);
+                        cropX = Math.floor((img.width - cropWidth) / 2);
+                        cropY = 0;
+                    } else {
+                        cropWidth = img.width;
+                        cropHeight = Math.floor(cropWidth / targetRatio);
+                        cropX = 0;
+                        cropY = Math.floor((img.height - cropHeight) / 2);
+                    }
+                    
+                    var canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = Math.floor(width / targetRatio);
+                    
+                    var ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
+                    
+                    var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                    resolve(dataUrl);
+                };
+                img.onerror = function() { reject(new Error('Image decode failed')); };
+                img.src = e.target.result;
+            };
+            reader.onerror = function() { reject(new Error('File read failed')); };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // ================================================================
+    //  添加用户上传的照片
+    // ================================================================
+    function addUserPhoto(file) {
+        var userPhotoCount = photoList.length - 1;
+        if (userPhotoCount >= MAX_USER_PHOTOS) {
+            log('[PHOTO] Upload limit reached');
+            return Promise.reject(new Error('Upload limit reached'));
+        }
+        
+        log('[PHOTO] Processing: ' + file.name);
+        
+        return compressAndCrop(file).then(function(dataUrl) {
+            var photoObj = { type: 'user', src: dataUrl, img: null };
+            
+            // 判断当前是否有选中效果
+            if (currentEffect === 'none') {
+                // 无效果：替换索引0的图
+                photoList[0] = photoObj;
+                currentPhotoIndex = 0;
+                log('[PHOTO] Replaced default photo');
+            } else {
+                // 有效果：追加新图
+                photoList.push(photoObj);
+                currentPhotoIndex = photoList.length - 1;
+                log('[PHOTO] Added new photo, total: ' + photoList.length);
+            }
+            
+            return new Promise(function(resolve) {
+                var newImg = new Image();
+                newImg.onload = function() {
+                    photoObj.img = newImg;
+                    updatePhotoSwitchButtons();
+                    updateAddPhotoButton();
+                    render();
+                    resolve();
+                };
+                newImg.src = dataUrl;
+            });
+        });
+    }
+
+    // ================================================================
+    //  切换预览图（左右循环）
+    // ================================================================
+    function switchPhoto(direction) {
+        if (photoList.length <= 1) return;
+        
+        if (direction === 'left') {
+            currentPhotoIndex = (currentPhotoIndex - 1 + photoList.length) % photoList.length;
+        } else {
+            currentPhotoIndex = (currentPhotoIndex + 1) % photoList.length;
+        }
+        
+        log('[PHOTO] Switched to index ' + currentPhotoIndex);
+        
+        // 清除当前效果下其他照片的缓存
+        Object.keys(renderedCache).forEach(function(key) {
+            if (key.startsWith(currentEffect + '_') && key !== getCacheKey()) {
+                delete renderedCache[key];
+            }
+        });
+        
+        var photo = photoList[currentPhotoIndex];
+        if (!photo.img) {
+            if (isLoadingPhoto) return;
+            isLoadingPhoto = true;
+            var img = new Image();
+            img.onload = function() {
+                photo.img = img;
+                isLoadingPhoto = false;
+                render();
+            };
+            img.src = photo.src;
+        } else {
+            render();
+        }
+    }
+
+    // ================================================================
+    //  更新照片切换按钮的显示状态
+    // ================================================================
+    function updatePhotoSwitchButtons() {
+        var btnPrev = document.getElementById('btnPrevPhoto');
+        var btnNext = document.getElementById('btnNextPhoto');
+        
+        if (photoList.length > 1) {
+            btnPrev.style.display = 'flex';
+            btnNext.style.display = 'flex';
+        } else {
+            btnPrev.style.display = 'none';
+            btnNext.style.display = 'none';
+        }
+    }
+
+    // ================================================================
+    //  更新上传按钮的状态
+    // ================================================================
+    function updateAddPhotoButton() {
+        var btnAdd = document.getElementById('btnAddPhoto');
+        var userPhotoCount = photoList.length - 1;
+        
+        if (userPhotoCount >= MAX_USER_PHOTOS) {
+            btnAdd.disabled = true;
+        } else {
+            btnAdd.disabled = false;
+        }
+    }
+
+    // ================================================================
+    //  更新效果按钮的状态
+    // ================================================================
+    function updateEffectButton() {
+        var addBtn = document.querySelector('.add-effect-btn');
+        if (!addBtn) return;
+        
+        var effectCount = document.querySelectorAll('.effect-item[data-border]').length;
+        
+        if (effectCount >= MAX_EFFECTS) {
+            addBtn.disabled = true;
+            addBtn.style.opacity = '0.4';
+            addBtn.style.cursor = 'not-allowed';
+        } else {
+            addBtn.disabled = false;
+            addBtn.style.opacity = '1';
+            addBtn.style.cursor = 'pointer';
+        }
     }
 
     // ================================================================
@@ -152,6 +358,113 @@
         } catch (e) {
             // 如果因为任何原因失败，不影响主流程
         }
+    }
+
+    // ================================================================
+    //  显示自动生成 mask 的错误信息
+    // ================================================================
+    function showAutoMaskError(message) {
+        autoMaskError.textContent = message;
+        autoMaskError.classList.add('visible');
+        setTimeout(function() {
+            autoMaskError.classList.remove('visible');
+        }, 3000);
+    }
+
+    // ================================================================
+    //  自动生成 MASK（从 color 图）
+    //  原理：转灰度 → 反相
+    // ================================================================
+    function generateMaskAutomatically() {
+        if (!step1Img) {
+            showAutoMaskError('Please upload a color image first.');
+            return;
+        }
+
+        // Show loading state
+        autoMaskBtn.disabled = true;
+        autoMaskBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
+        autoMaskError.style.display = 'none';
+
+        // Use setTimeout to allow UI update before heavy processing
+        setTimeout(function () {
+            try {
+                var canvas = document.createElement('canvas');
+                canvas.width = step1Img.width;
+                canvas.height = step1Img.height;
+                var ctx = canvas.getContext('2d');
+
+                // Draw color image
+                ctx.drawImage(step1Img, 0, 0);
+
+                // Get pixel data
+                var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                var data = imageData.data;
+
+                // Convert to grayscale and invert
+                for (var i = 0; i < data.length; i += 4) {
+                    var r = data[i];
+                    var g = data[i + 1];
+                    var b = data[i + 2];
+                    
+                    // Calculate luminance (standard formula)
+                    var gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                    
+                    // Invert
+                    var inverted = 255 - gray;
+                    
+                    // Set all channels to inverted value
+                    data[i] = inverted;     // R
+                    data[i + 1] = inverted; // G
+                    data[i + 2] = inverted; // B
+                    // Alpha stays 255
+                }
+
+                // Put processed data back
+                ctx.putImageData(imageData, 0, 0);
+
+                // Force GPU sync
+                forceGpuSync(canvas);
+
+                // Export as DataURL
+                var maskDataURL = canvas.toDataURL('image/jpeg', 0.95);
+
+                // Create new Image object
+                var maskImg = new Image();
+                maskImg.onload = function () {
+                    // Set as step2 image
+                    step2Img = maskImg;
+                    step2Ready = true;
+                    
+                    // Update preview immediately
+                    step2Preview.querySelector('img').src = maskDataURL;
+                    
+                    // Force display update before calling updateModalUI
+                    requestAnimationFrame(function() {
+                        step2Preview.style.display = '';
+                        dropZone2.style.display = 'none';
+                        
+                        // Reset button state
+                        autoMaskBtn.disabled = false;
+                        autoMaskBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Generate mask automatically';
+                        
+                        // Update UI (stepper, hint, OK button)
+                        updateModalUI();
+                    });
+                    
+                    log('[AUTO-MASK] Generated successfully: ' + canvas.width + 'x' + canvas.height);
+                };
+                maskImg.src = maskDataURL;
+
+            } catch (error) {
+                console.error('[AUTO-MASK] Error:', error);
+                showAutoMaskError('Failed to generate mask. Please upload manually.');
+                
+                // Reset button state
+                autoMaskBtn.disabled = false;
+                autoMaskBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Generate mask automatically';
+            }
+        }, 50);
     }
 
     // ================================================================
@@ -308,6 +621,12 @@
                 '</div>';
             listEl.appendChild(item);
         });
+        closeModal();
+        step1Img = null;
+        step2Img = null;
+        step2Ready = false;
+        step1Preview.style.display = 'none';
+        step2Preview.style.display = 'none';
         document.getElementById('errorOverlay').classList.add('visible');
     }
 
@@ -522,34 +841,76 @@
         canvas.style.height = Math.floor(mainImg.height * scale) + 'px';
     }
 
+    function startPreviewTransition() {
+        if (previewTransitionTimer) {
+            clearTimeout(previewTransitionTimer);
+        }
+        previewArea.classList.add('preview-transition');
+        canvas.style.opacity = '0.8';
+        previewTransitionTimer = setTimeout(function () {
+            canvas.style.opacity = '1';
+            previewArea.classList.remove('preview-transition');
+            previewTransitionTimer = null;
+        }, 160);
+    }
+
     // ================================================================
-    //  渲染主画布
-    //
-    //  每次切换效果时调用。
-    //  步骤：
-    //  1. 设置 canvas 内部分辨率为原图尺寸
-    //  2. 画原图
-    //  3. 如果有选中效果：
-    //     a. 将缓存的 colorCvs 缩放到原图尺寸（离屏）
-    //     b. 将缓存的 maskCvs 缩放到原图尺寸（离屏）
-    //     c. 读取三个 canvas 的像素数据
-    //     d. 逐像素混合：out = photo × (1 - alpha) + color × alpha
-    //     e. 写回主 canvas
-    //
-    //  注意：不使用 globalCompositeOperation，因为实测中在某些浏览器下
-    //  destination-in 模式表现不一致。手动混合虽然多一次像素遍历，
-    //  但结果完全可控。
+    //  渲染预览（支持多照片切换 + 修复缓存）
     // ================================================================
     function render() {
-        if (!mainImg || !mainImg.width) return;
-        var w = mainImg.width, h = mainImg.height;
+        if (isLoadingPhoto) return; // 防止加载中的竞态
+        
+        var currentPhoto = photoList[currentPhotoIndex];
+        
+        // 如果照片还没加载，先加载
+        if (!currentPhoto.img || !currentPhoto.img.width) {
+            isLoadingPhoto = true;
+            var img = new Image();
+            img.onload = function() {
+                currentPhoto.img = img;
+                mainImg = img;
+                isLoadingPhoto = false;
+                render();
+            };
+            img.onerror = function() {
+                isLoadingPhoto = false;
+                log('[RENDER] Failed to load photo');
+            };
+            img.src = currentPhoto.src;
+            return;
+        }
+        
+        var w = currentPhoto.img.width, h = currentPhoto.img.height;
+        mainImg = currentPhoto.img;
+
+        if (currentEffect === 'none') {
+            canvas.width = w; canvas.height = h;
+            ctx.drawImage(mainImg, 0, 0, w, h);
+            fitCanvas();
+            return;
+        }
+
+        var cacheKey = getCacheKey();
+        if (renderedCache[cacheKey]) {
+            log('[RENDER] Cache HIT: ' + cacheKey);
+            canvas.width = w; canvas.height = h;
+            ctx.drawImage(renderedCache[cacheKey], 0, 0, w, h);
+            fitCanvas();
+            return;
+        }
+
+        log('[RENDER] Cache MISS: ' + cacheKey);
+        startPreviewTransition();
+        canvas.width = w; canvas.height = h;
+
+        startPreviewTransition();
         canvas.width = w; canvas.height = h;
 
         // 1. 画原图底图
         ctx.drawImage(mainImg, 0, 0, w, h);
 
         // 2. 如果有选中效果，叠加边框
-        if (currentEffect !== 'none' && processedBorders[currentEffect]) {
+        if (processedBorders[currentEffect]) {
             var border = processedBorders[currentEffect];
 
             // 3a. 缩放 color 到原图尺寸
@@ -583,6 +944,12 @@
             ctx.putImageData(new ImageData(outPx, w, h), 0, 0);
         }
 
+        var cachedCanvas = document.createElement('canvas');
+        cachedCanvas.width = w;
+        cachedCanvas.height = h;
+        cachedCanvas.getContext('2d').drawImage(canvas, 0, 0, w, h);
+        renderedCache[cacheKey] = cachedCanvas;
+
         fitCanvas();
     }
 
@@ -593,6 +960,13 @@
         currentEffect = name;
         log('[APPLY] ' + name);
 
+        // 清除新效果下所有照片的缓存（让它重新渲染）
+        Object.keys(renderedCache).forEach(function(key) {
+            if (key.startsWith(name + '_')) {
+                delete renderedCache[key];
+            }
+        });
+
         // 更新侧边栏高亮
         var items = effectListEl.querySelectorAll('.effect-item');
         for (var i = 0; i < items.length; i++) {
@@ -600,25 +974,79 @@
         }
 
         render();
+        
+        // 更新导出按钮状态
+        updateExportButton();
     }
 
     // ================================================================
     //  在侧边栏添加一个效果项
     // ================================================================
-    function addEffectItem(id, label, thumbUrl, desc) {
+    function addEffectItem(id, label, thumbUrl, desc, compact) {
         var item = document.createElement('div');
-        item.className = 'effect-item';
+        item.className = 'effect-item' + (compact ? ' compact-effect' : '');
         item.dataset.border = id;
         item.setAttribute('tabindex', '0');
         item.setAttribute('role', 'button');
+        var safeSrc = thumbUrl || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
         item.innerHTML =
-            '<img class="effect-thumb" src="' + thumbUrl + '" alt="' + label + '">' +
+            '<img class="effect-thumb" src="' + safeSrc + '" alt="' + label + '">' +
             '<div class="effect-meta">' +
                 '<div class="effect-name">' + label + '</div>' +
                 '<div class="effect-desc">' + desc + '</div>' +
             '</div>';
-        effectListEl.appendChild(item);
+        if (effectItemsContainer) {
+            effectItemsContainer.appendChild(item);
+        } else {
+            effectListEl.appendChild(item);
+        }
         return item;
+    }
+
+    // ================================================================
+    //  自动检测边框文件
+    //  
+    //  由于浏览器安全限制无法直接扫描目录，采用试探性加载策略：
+    //  从 border_1.jpg 开始依次尝试加载，直到连续失败 3 次或达到最大尝试次数
+    //  这样可以动态识别 Resources 文件夹中的所有 border_X.jpg 文件
+    // ================================================================
+    function autoDetectBorders(callback) {
+        var detectedFiles = [];
+        var index = 1;
+        var consecutiveFailures = 0;
+        
+        log('[INIT] Starting auto-detection of border files...');
+        
+        function tryLoadNext() {
+            // 停止条件：达到最大尝试次数或连续失败次数超过阈值
+            if (index > MAX_BORDER_ATTEMPTS || consecutiveFailures >= CONSECUTIVE_FAILURE_THRESHOLD) {
+                log('[INIT] Auto-detection complete. Found ' + detectedFiles.length + ' border file(s).');
+                callback(detectedFiles);
+                return;
+            }
+            
+            var filename = 'border_' + index + '.jpg';
+            
+            loadImage(filename).then(function(img) {
+                // 加载成功
+                consecutiveFailures = 0; // 重置失败计数
+                detectedFiles.push(filename);
+                log('[INIT] Detected: ' + filename + ' (' + img.width + 'x' + img.height + ')');
+                
+                index++;
+                tryLoadNext(); // 继续尝试下一个
+                
+            }).catch(function(err) {
+                // 加载失败
+                consecutiveFailures++;
+                log('[INIT] Not found: ' + filename + ' (failure ' + consecutiveFailures + '/' + CONSECUTIVE_FAILURE_THRESHOLD + ')');
+                
+                index++;
+                tryLoadNext(); // 继续尝试下一个
+            });
+        }
+        
+        tryLoadNext(); // 开始探测
     }
 
     // ================================================================
@@ -627,7 +1055,7 @@
     function buildUI() {
         // "No Effect" 选项
         var noneItem = document.createElement('div');
-        noneItem.className = 'effect-item active';
+        noneItem.className = 'effect-item active compact-effect';
         noneItem.dataset.border = 'none';
         noneItem.setAttribute('tabindex', '0');
         noneItem.setAttribute('role', 'button');
@@ -639,28 +1067,45 @@
             '</div>';
         effectListEl.appendChild(noneItem);
 
-        // 逐个加载预设边框
-        BORDER_LIST.forEach(function (file) {
-            loadImage(file).then(function (img) {
-                var label = file.replace('border_', 'Border ').replace('.jpg', '');
-                var halfH = Math.floor(img.height / 2);
+        effectItemsContainer = document.createElement('div');
+        effectItemsContainer.className = 'effect-items-group';
+        effectListEl.appendChild(effectItemsContainer);
 
-                // 生成缩略图：取素材上半部分（彩色区域）
-                var tc = document.createElement('canvas');
-                tc.width = img.width; tc.height = halfH;
-                tc.getContext('2d').drawImage(img, 0, 0, img.width, halfH);
-                var thumbUrl = tc.toDataURL();
+        // 自动检测并加载所有边框文件
+        autoDetectBorders(function(detectedFiles) {
+            if (detectedFiles.length === 0) {
+                log('[INIT] No border files detected.');
+            } else {
+                // 逐个处理检测到的边框文件
+                detectedFiles.forEach(function (file) {
+                    var index = parseInt(file.replace('border_', '').replace('.jpg', ''));
+                    var label = 'Border ' + index;
+                    var placeholderItem = addEffectItem(file, label, '', 'Loading...', true);
 
-                addEffectItem(file, label, thumbUrl, img.width + ' &times; ' + halfH);
+                    loadImage(file).then(function (img) {
+                        var halfH = Math.floor(img.height / 2);
 
-                // 预处理边框（只执行一次，结果缓存到 processedBorders）
-                log('[INIT] Processing: ' + file);
-                var result = processBorder(img);
-                processedBorders[file] = result;
+                        // 生成缩略图：取素材上半部分（彩色区域）
+                        var tc = document.createElement('canvas');
+                        tc.width = img.width; tc.height = halfH;
+                        tc.getContext('2d').drawImage(img, 0, 0, img.width, halfH, 0, 0, img.width, halfH);
+                        var thumbUrl = tc.toDataURL();
 
-            }).catch(function (err) {
-                log('[INIT] ERROR: ' + file + ' - ' + err.message);
-            });
+                        placeholderItem.querySelector('.effect-thumb').src = thumbUrl;
+                        placeholderItem.querySelector('.effect-thumb').alt = label;
+                        placeholderItem.querySelector('.effect-desc').textContent = img.width + ' × ' + halfH;
+
+                        // 预处理边框（只执行一次，结果缓存到 processedBorders）
+                        log('[INIT] Processing: ' + file);
+                        var result = processBorder(img);
+                        processedBorders[file] = result;
+
+                    }).catch(function (err) {
+                        log('[INIT] ERROR: ' + file + ' - ' + err.message);
+                        placeholderItem.querySelector('.effect-desc').textContent = 'Load failed';
+                    });
+                });
+            }
         });
 
         // "Add New Effect" 按钮（追加在效果列表最后）
@@ -675,61 +1120,115 @@
     //  导入弹窗逻辑
     //  分两步：先选颜色图，再选灰度蒙版图
     // ================================================================
-    var modalOverlay, modalStep, modalHint, dropZone, step1Preview, step2Preview;
+    var modalOverlay, modalHint, dropZone1, dropZone2, step1Preview, step2Preview;
+    var autoMaskBtn, autoMaskError;
     var step1Img   = null;   // 第一步选择的颜色图
-    var currentStep = 1;     // 当前步骤（1 或 2）
+    var step2Img   = null;   // 第二步选择的蒙版图
+    var step2Ready = false;  // 第二步是否已经选择了蒙版图，OK 按钮才能启用
 
     function initModal() {
         modalOverlay = document.getElementById('modalOverlay');
-        modalStep    = document.getElementById('modalStep');
         modalHint    = document.getElementById('modalHint');
-        dropZone     = document.getElementById('dropZone');
+        dropZone1    = document.getElementById('dropZone1');
+        dropZone2    = document.getElementById('dropZone2');
         step1Preview = document.getElementById('step1Preview');
         step2Preview = document.getElementById('step2Preview');
+        autoMaskBtn  = document.getElementById('autoMaskBtn');
+        autoMaskError = document.getElementById('autoMaskError');
 
         // 点击拖放区域 → 打开文件选择器
-        dropZone.addEventListener('click', function () {
-            var input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.onchange = function () {
-                if (input.files[0]) handleFile(input.files[0]);
-                input.value = '';
-            };
-            input.click();
+        dropZone1.addEventListener('click', function () {
+            chooseFileForStep(1);
         });
 
-        // 拖拽支持
-        dropZone.addEventListener('dragover', function (e) {
+        dropZone2.addEventListener('click', function () {
+            if (!dropZone2.classList.contains('disabled')) {
+                chooseFileForStep(2);
+            }
+        });
+
+        // Drag & Drop support for dropZone1
+        dropZone1.addEventListener('dragover', function (e) {
             e.preventDefault();
-            dropZone.style.borderColor = '#d4a24e';
-            dropZone.style.background = 'rgba(212, 162, 78, 0.08)';
+            dropZone1.style.borderColor = '#d4a24e';
+            dropZone1.style.background = 'rgba(212, 162, 78, 0.08)';
         });
 
-        dropZone.addEventListener('dragleave', function () {
-            dropZone.style.borderColor = '';
-            dropZone.style.background = '';
+        dropZone1.addEventListener('dragleave', function () {
+            dropZone1.style.borderColor = '';
+            dropZone1.style.background = '';
         });
 
-        dropZone.addEventListener('drop', function (e) {
+        dropZone1.addEventListener('drop', function (e) {
             e.preventDefault();
-            dropZone.style.borderColor = '';
-            dropZone.style.background = '';
-            if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+            dropZone1.style.borderColor = '';
+            dropZone1.style.background = '';
+            if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0], 1);
         });
+
+        // Drag & Drop support for dropZone2
+        dropZone2.addEventListener('dragover', function (e) {
+            if (dropZone2.classList.contains('disabled')) return;
+            e.preventDefault();
+            dropZone2.style.borderColor = '#d4a24e';
+            dropZone2.style.background = 'rgba(212, 162, 78, 0.08)';
+        });
+
+        dropZone2.addEventListener('dragleave', function () {
+            dropZone2.style.borderColor = '';
+            dropZone2.style.background = '';
+        });
+
+        dropZone2.addEventListener('drop', function (e) {
+            if (dropZone2.classList.contains('disabled')) return;
+            e.preventDefault();
+            dropZone2.style.borderColor = '';
+            dropZone2.style.background = '';
+            if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0], 2);
+        });
+
+        // Auto mask button
+        autoMaskBtn.addEventListener('click', generateMaskAutomatically);
 
         document.getElementById('modalCancel').addEventListener('click', closeModal);
-        document.getElementById('modalBack').addEventListener('click', goBack);
+        document.getElementById('modalOk').addEventListener('click', function () {
+            if (!step1Img || !step2Ready || !step2Img) return;
+            finishImport(step2Img);
+        });
         document.getElementById('errorOk').addEventListener('click', function () {
             document.getElementById('errorOverlay').classList.remove('visible');
         });
     }
 
+    function chooseFileForStep(step) {
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = function () {
+            if (input.files[0]) handleFile(input.files[0], step);
+            input.value = '';
+        };
+        input.click();
+    }
+
     function openModal() {
         step1Img    = null;
-        currentStep = 1;
+        step2Img    = null;
+        step2Ready  = false;
+        
+        // Reset UI - use display property
         step1Preview.style.display = 'none';
         step2Preview.style.display = 'none';
+        
+        dropZone1.style.display = '';
+        dropZone1.classList.remove('disabled');
+        
+        dropZone2.style.display = '';
+        dropZone2.classList.add('disabled');
+        
+        autoMaskBtn.disabled = true;
+        autoMaskError.style.display = 'none';
+        
         updateModalUI();
         modalOverlay.classList.add('visible');
     }
@@ -739,77 +1238,143 @@
     }
 
     function updateModalUI() {
-        if (currentStep === 1) {
-            modalStep.textContent = 'Step 1 of 2';
-            modalHint.textContent = 'Select the color image for the border effect.';
-            dropZone.querySelector('i').className = 'fa-solid fa-palette';
-            dropZone.querySelector('span').textContent = 'Click or drag to select color image';
-            document.getElementById('modalBack').style.display = 'none';
-        } else {
-            modalStep.textContent = 'Step 2 of 2';
-            modalHint.textContent = 'Select the grayscale mask image.';
-            dropZone.querySelector('i').className = 'fa-solid fa-circle-half-stroke';
-            dropZone.querySelector('span').textContent = 'Click or drag to select mask image';
-            document.getElementById('modalBack').style.display = '';
+        var stepItems = document.querySelectorAll('.step-item');
+        for (var i = 0; i < stepItems.length; i++) {
+            var stepNum = Number(stepItems[i].dataset.step);
+            if (stepNum === 1 && step1Img) {
+                stepItems[i].className = 'step-item done';
+            } else if (stepNum === 2 && step2Ready) {
+                stepItems[i].className = 'step-item done';
+            } else if (stepNum === 1 && !step1Img) {
+                stepItems[i].className = 'step-item active';
+            } else if (stepNum === 2 && step1Img && !step2Ready) {
+                stepItems[i].className = 'step-item active';
+            } else {
+                stepItems[i].className = 'step-item disabled';
+            }
         }
+
+        var modalOk = document.getElementById('modalOk');
+        
+        // Update hint
+        if (!step1Img) {
+            modalHint.textContent = 'Select the color image for the border effect.';
+        } else if (!step2Ready) {
+            modalHint.textContent = 'Now select the grayscale mask image or generate it automatically.';
+        } else {
+            modalHint.textContent = 'Both images are ready. Click OK to import.';
+        }
+
+        // Update previews and drop-zones - use display for clean layout
+        requestAnimationFrame(function() {
+            if (step1Img) {
+                step1Preview.style.display = '';
+                dropZone1.style.display = 'none';
+            } else {
+                step1Preview.style.display = 'none';
+                dropZone1.style.display = '';
+            }
+
+            if (step2Img) {
+                step2Preview.style.display = '';
+                dropZone2.style.display = 'none';
+            } else {
+                step2Preview.style.display = 'none';
+                dropZone2.style.display = '';
+            }
+        });
+        
+        // Enable/disable step 2
+        if (step1Img) {
+            dropZone2.classList.remove('disabled');
+            autoMaskBtn.disabled = false;
+        } else {
+            dropZone2.classList.add('disabled');
+            autoMaskBtn.disabled = true;
+        }
+
+        // OK button state
+        modalOk.disabled = !step2Ready;
     }
 
-    function goBack() {
-        if (currentStep === 2) {
-            currentStep = 2; // 先设为2，下面才不会跳过
-            currentStep = 1;
-            step2Preview.style.display = 'none';
-            updateModalUI();
+
+    function finishImport(bwImg) {
+        step2Preview.querySelector('img').src = bwImg.src;
+        step2Preview.style.display = '';
+
+        log('[IMPORT] Validating...');
+        var result = validateBorderPair(step1Img, bwImg);
+        if (!result.valid) {
+            log('[IMPORT] FAILED: ' + result.errors.length + ' error(s)');
+            showErrorModal(result.errors);
+            return;
         }
+        log('[IMPORT] Passed');
+
+        log('[IMPORT] Processing...');
+        var processed = processBorderFromTwo(step1Img, bwImg);
+        customCount++;
+        var id = 'custom_' + customCount;
+        var label = 'Custom ' + customCount;
+        var desc = step1Img.width + ' × ' + step1Img.height + ' (' + processed.filtered + 'px filtered)';
+        var thumbUrl = step1Img.src;
+
+        processedBorders[id] = processed;
+        var item = addEffectItem(id, label, thumbUrl, desc, true);
+        var badge = document.createElement('div');
+        badge.className = 'custom-label';
+        badge.textContent = label;
+        item.insertBefore(badge, item.firstChild);
+
+        // 更新效果按钮状态
+        updateEffectButton();
+
+        applyEffect(id);
+        closeModal();
     }
 
     /**
      * 处理用户选择的文件
      * Step 1：加载为图片，显示预览，进入 Step 2
-     * Step 2：加载为图片，校验，处理，添加到列表
+     * Step 2：加载为图片后先显示预览，等待用户点击 OK 确认导入
      */
-    function handleFile(file) {
-        if (currentStep === 1) {
+    function handleFile(file, step) {
+        if (step === 1) {
             loadImageFromFile(file).then(function (img) {
                 step1Img = img;
                 step1Preview.querySelector('img').src = img.src;
-                step1Preview.style.display = '';
-                currentStep = 2;
-                updateModalUI();
+                
+                // Use display for clean layout
+                requestAnimationFrame(function() {
+                    step1Preview.style.display = '';
+                    dropZone1.style.display = 'none';
+                    
+                    // Reset step 2
+                    step2Ready = false;
+                    step2Img = null;
+                    step2Preview.style.display = 'none';
+                    dropZone2.style.display = '';
+                    
+                    updateModalUI();
+                    log('[UPLOAD] Color image loaded: ' + img.width + 'x' + img.height);
+                });
             }).catch(function () {
                 alert('Failed to load image.');
             });
         } else {
             loadImageFromFile(file).then(function (bwImg) {
+                step2Img = bwImg;
+                step2Ready = true;
                 step2Preview.querySelector('img').src = bwImg.src;
-                step2Preview.style.display = '';
-
-                // 校验
-                log('[IMPORT] Validating...');
-                var result = validateBorderPair(step1Img, bwImg);
-                if (!result.valid) {
-                    log('[IMPORT] FAILED: ' + result.errors.length + ' error(s)');
-                    showErrorModal(result.errors);
-                    return;
-                }
-                log('[IMPORT] Passed');
-
-                // 处理
-                log('[IMPORT] Processing...');
-                var processed = processBorderFromTwo(step1Img, bwImg);
-                customCount++;
-                var id = 'custom_' + customCount;
-                var label = 'Custom ' + customCount;
-                var desc = step1Img.width + ' \u00d7 ' + step1Img.height + ' (' + processed.filtered + 'px filtered)';
-                var thumbUrl = step1Img.src;
-
-                // 缓存并添加到列表
-                processedBorders[id] = processed;
-                addEffectItem(id, label, thumbUrl, desc);
-
-                // 自动选中新效果
-                applyEffect(id);
-                closeModal();
+                
+                // Use display for clean layout
+                requestAnimationFrame(function() {
+                    step2Preview.style.display = '';
+                    dropZone2.style.display = 'none';
+                    
+                    updateModalUI();
+                    log('[UPLOAD] Mask image loaded: ' + bwImg.width + 'x' + bwImg.height);
+                });
             }).catch(function () {
                 alert('Failed to load image.');
             });
@@ -840,6 +1405,268 @@
     // 窗口缩放时重新适配 canvas 显示尺寸
     window.addEventListener('resize', fitCanvas);
 
+    // ====== 照片上传与切换按钮事件绑定 ======
+    
+    var btnAddPhoto = document.getElementById('btnAddPhoto');
+    if (btnAddPhoto) {
+        btnAddPhoto.addEventListener('click', function() {
+            var input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = function(e) {
+                var file = e.target.files[0];
+                if (file) {
+                    addUserPhoto(file).catch(function(err) {
+                        log('[PHOTO] Upload failed: ' + err.message);
+                    });
+                }
+            };
+            input.click();
+        });
+    }
+
+    var btnPrevPhoto = document.getElementById('btnPrevPhoto');
+    if (btnPrevPhoto) {
+        btnPrevPhoto.addEventListener('click', function() {
+            switchPhoto('left');
+        });
+    }
+
+    var btnNextPhoto = document.getElementById('btnNextPhoto');
+    if (btnNextPhoto) {
+        btnNextPhoto.addEventListener('click', function() {
+            switchPhoto('right');
+        });
+    }
+
+    // ====== 导出资源功能 ======
+    var isExporting = false; // 防止重复触发
+    
+    function updateExportButton() {
+        var btnExport = document.getElementById('btnExport');
+        if (!btnExport) return;
+        
+        // 只有选中了效果（不是'none'）才能导出
+        if (currentEffect !== 'none' && !isExporting) {
+            btnExport.disabled = false;
+        } else {
+            btnExport.disabled = true;
+        }
+    }
+    
+    /**
+     * 将Canvas转换为JPEG Blob（baseline格式）
+     */
+    function canvasToJpegBlob(canvas, quality) {
+        return new Promise(function(resolve, reject) {
+            try {
+                canvas.toBlob(function(blob) {
+                    if (blob) {
+                        resolve(blob);
+                    } else {
+                        reject(new Error('Canvas to Blob conversion failed'));
+                    }
+                }, 'image/jpeg', quality || 0.95);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+    
+    /**
+     * 创建灰度版本的mask图（RGB三通道相同）
+     */
+    function createGrayscaleMask(maskCvs) {
+        var w = maskCvs.width;
+        var h = maskCvs.height;
+        var grayCvs = document.createElement('canvas');
+        grayCvs.width = w;
+        grayCvs.height = h;
+        var ctx = grayCvs.getContext('2d');
+        
+        // 从传入的maskCvs读取像素数据，而不是从空canvas读取
+        var maskCtx = maskCvs.getContext('2d');
+        var imageData = maskCtx.getImageData(0, 0, w, h);
+        var data = imageData.data;
+        
+        // 将Alpha通道值复制到RGB通道
+        for (var i = 0; i < w * h; i++) {
+            var alpha = data[i * 4 + 3];
+            data[i * 4] = alpha;     // R
+            data[i * 4 + 1] = alpha; // G
+            data[i * 4 + 2] = alpha; // B
+            data[i * 4 + 3] = 255;   // Alpha保持255（不透明）
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        return grayCvs;
+    }
+    
+    /**
+     * 导出资源文件
+     */
+    function exportResources() {
+        if (isExporting) return;
+        if (currentEffect === 'none') {
+            log('[EXPORT] No effect selected');
+            return;
+        }
+        
+        isExporting = true;
+        var btnExport = document.getElementById('btnExport');
+        if (btnExport) {
+            btnExport.classList.add('loading');
+            btnExport.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Exporting...';
+        }
+        
+        log('[EXPORT] Starting export for effect: ' + currentEffect);
+        
+        // 获取当前预览图
+        var currentPhoto = photoList[currentPhotoIndex];
+        if (!currentPhoto.img || !currentPhoto.img.width) {
+            log('[EXPORT] ERROR: Photo not loaded');
+            isExporting = false;
+            if (btnExport) {
+                btnExport.classList.remove('loading');
+                btnExport.innerHTML = '<i class="fa-solid fa-download"></i> Export Resources';
+            }
+            return;
+        }
+        
+        var photoImg = currentPhoto.img;
+        var photoW = photoImg.width;
+        var photoH = photoImg.height;
+        
+        // 获取效果的预处理数据
+        var borderData = processedBorders[currentEffect];
+        if (!borderData) {
+            log('[EXPORT] ERROR: Border data not found');
+            isExporting = false;
+            if (btnExport) {
+                btnExport.classList.remove('loading');
+                btnExport.innerHTML = '<i class="fa-solid fa-download"></i> Export Resources';
+            }
+            return;
+        }
+        
+        // 创建ZIP对象
+        var zip = new JSZip();
+        
+        // 并行生成所有图片
+        Promise.all([
+            // 1. 带效果的预览图
+            canvasToJpegBlob(canvas, 0.95).then(function(blob) {
+                zip.file('preview_with_effect.jpg', blob);
+                log('[EXPORT] Generated preview_with_effect.jpg');
+            }),
+            
+            // 2. 原始预览图
+            (function() {
+                var origCvs = document.createElement('canvas');
+                origCvs.width = photoW;
+                origCvs.height = photoH;
+                var origCtx = origCvs.getContext('2d');
+                origCtx.drawImage(photoImg, 0, 0);
+                return canvasToJpegBlob(origCvs, 0.95).then(function(blob) {
+                    zip.file('preview_original.jpg', blob);
+                    log('[EXPORT] Generated preview_original.jpg');
+                });
+            })(),
+            
+            // 3. Color图（缩放到640x480）
+            (function() {
+                var colorCvs = document.createElement('canvas');
+                colorCvs.width = 640;
+                colorCvs.height = 480;
+                var colorCtx = colorCvs.getContext('2d');
+                colorCtx.drawImage(borderData.colorCvs, 0, 0, 640, 480);
+                return canvasToJpegBlob(colorCvs, 0.95).then(function(blob) {
+                    zip.file('effect_color_640x480.jpg', blob);
+                    log('[EXPORT] Generated effect_color_640x480.jpg');
+                });
+            })(),
+            
+            // 4. Mask图（缩放到640x480，转换为灰度）
+            (function() {
+                var maskGrayCvs = createGrayscaleMask(borderData.maskCvs);
+                var scaledMaskCvs = document.createElement('canvas');
+                scaledMaskCvs.width = 640;
+                scaledMaskCvs.height = 480;
+                var maskCtx = scaledMaskCvs.getContext('2d');
+                maskCtx.drawImage(maskGrayCvs, 0, 0, 640, 480);
+                return canvasToJpegBlob(scaledMaskCvs, 0.95).then(function(blob) {
+                    zip.file('effect_mask_640x480.jpg', blob);
+                    log('[EXPORT] Generated effect_mask_640x480.jpg');
+                });
+            })(),
+            
+            // 5. 合并图（640x960，上color下mask）
+            (function() {
+                var combinedCvs = document.createElement('canvas');
+                combinedCvs.width = 640;
+                combinedCvs.height = 960;
+                var combinedCtx = combinedCvs.getContext('2d');
+                
+                // 上半部分：color图
+                combinedCtx.drawImage(borderData.colorCvs, 0, 0, 640, 480);
+                
+                // 下半部分：mask图（灰度）
+                var maskGrayCvs = createGrayscaleMask(borderData.maskCvs);
+                combinedCtx.drawImage(maskGrayCvs, 0, 480, 640, 480);
+                
+                return canvasToJpegBlob(combinedCvs, 0.95).then(function(blob) {
+                    zip.file('effect_combined_640x960.jpg', blob);
+                    log('[EXPORT] Generated effect_combined_640x960.jpg');
+                });
+            })()
+            
+        ]).then(function() {
+            // 所有图片生成完成，生成ZIP并下载
+            log('[EXPORT] Generating ZIP file...');
+            return zip.generateAsync({
+                type: 'blob',
+                compression: 'DEFLATE',
+                compressionOptions: { level: 6 }
+            });
+        }).then(function(zipBlob) {
+            // 创建下载链接
+            var url = URL.createObjectURL(zipBlob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'border_resources.zip';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            log('[EXPORT] Export completed successfully');
+            
+            // 恢复按钮状态
+            isExporting = false;
+            if (btnExport) {
+                btnExport.classList.remove('loading');
+                btnExport.innerHTML = '<i class="fa-solid fa-download"></i> Export Resources';
+            }
+        }).catch(function(err) {
+            log('[EXPORT] ERROR: ' + err.message);
+            console.error('[EXPORT]', err);
+            
+            // 恢复按钮状态
+            isExporting = false;
+            if (btnExport) {
+                btnExport.classList.remove('loading');
+                btnExport.innerHTML = '<i class="fa-solid fa-download"></i> Export Resources';
+            }
+            alert('Export failed: ' + err.message);
+        });
+    }
+    
+    // 绑定导出按钮事件
+    var btnExport = document.getElementById('btnExport');
+    if (btnExport) {
+        btnExport.addEventListener('click', exportResources);
+    }
+
     // ================================================================
     //  启动
     // ================================================================
@@ -849,11 +1676,18 @@
 
     // 加载默认原图
     loadImage(DEFAULT_PHOTO).then(function (img) {
+        photoList[0].img = img;
         mainImg = img;
         log('[INIT] Photo: ' + img.width + 'x' + img.height);
         applyEffect('none');
+        
+        // 初始化按钮状态
+        updatePhotoSwitchButtons();
+        updateAddPhotoButton();
+        updateExportButton(); // 初始化导出按钮状态
     }).catch(function (err) {
         log('[INIT] ERROR: ' + err.message);
     });
+
 
 })();

@@ -45,6 +45,7 @@ body, html {
 .toolbar {
     width: 240px;
     flex-shrink: 0;
+    min-height: 0;
     background: var(--bg-raised);
     border-right: 1px solid var(--border);
     display: flex;
@@ -67,6 +68,9 @@ body, html {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 /* 单个效果项 */
@@ -74,7 +78,10 @@ body, html {
     display: flex;
     align-items: center;
     gap: 12px;
+    width: 100%;
     padding: 10px 12px;
+    min-height: 82px;
+    flex-shrink: 0;
     border: 2px solid transparent;
     border-radius: 10px;
     background: var(--card);
@@ -83,6 +90,51 @@ body, html {
     position: relative;
     overflow: hidden;
     user-select: none;
+}
+
+.effect-item.compact-effect {
+    justify-content: center;
+    align-self: stretch;
+    width: 100%;
+    max-width: none;
+    min-height: 82px;
+    padding: 10px 12px;
+}
+
+.effect-item.compact-effect .effect-meta {
+    display: none;
+}
+
+.effect-item.compact-effect .effect-thumb {
+    width: min(100%, 120px);
+    max-width: 120px;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+}
+
+.effect-item.compact-effect .custom-label {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 1;
+    padding: 3px 6px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.72);
+    color: #f2d59b;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    pointer-events: none;
+}
+
+.effect-item.compact-effect .no-effect-icon {
+    width: min(100%, 120px);
+    max-width: 120px;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    border-radius: 8px;
 }
 
 /* 选中态左侧金色竖条 */
@@ -112,9 +164,9 @@ body, html {
 .effect-item.active::before { opacity: 1; }
 
 .effect-thumb {
-    width: 52px;
-    height: 36px;
-    border-radius: 5px;
+    width: 80px;
+    height: 60px;
+    border-radius: 8px;
     background: #111;
     object-fit: cover;
     flex-shrink: 0;
@@ -146,16 +198,16 @@ body, html {
 
 /* "No Effect" 的图标 */
 .no-effect-icon {
-    width: 52px;
-    height: 36px;
-    border-radius: 5px;
+    width: 80px;
+    height: 60px;
+    border-radius: 8px;
     background: var(--card);
     border: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: center;
     color: #444;
-    font-size: 15px;
+    font-size: 18px;
     flex-shrink: 0;
 }
 
@@ -165,10 +217,11 @@ body, html {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 12px;
+    padding: 14px 12px;
+    min-height: 48px;
     border: 2px dashed #333;
     border-radius: 10px;
-    background: transparent;
+    background: rgba(212, 162, 78, 0.04);
     color: var(--muted);
     font-family: 'DM Sans', sans-serif;
     font-size: 12px;
@@ -181,7 +234,8 @@ body, html {
 .add-effect-btn:hover {
     border-color: var(--accent);
     color: var(--accent);
-    background: rgba(212, 162, 78, 0.06);
+    background: rgba(212, 162, 78, 0.1);
+    transform: translateY(-1px);
 }
 
 .add-effect-btn i { font-size: 13px; }
@@ -260,6 +314,7 @@ body, html {
 .preview {
     flex: 1;
     display: flex;
+    flex-direction: column;  /* ← 改为垂直布局 */
     align-items: center;
     justify-content: center;
     padding: 30px;
@@ -274,14 +329,155 @@ body, html {
     background-position: 0 0, 0 12px, 12px -12px, -12px 0;
 }
 
+/* ====== 照片控制按钮区域 ====== */
+.photo-controls {
+    padding: 0 0 12px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-add-photo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    background: #1c1c1c;
+    color: #e4e4e4;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.btn-add-photo:hover {
+    background: #252525;
+    border-color: #363636;
+}
+
+.btn-add-photo:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-add-photo i {
+    font-size: 13px;
+}
+
+/* ====== 导出按钮样式 ====== */
+.btn-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    background: #1c1c1c;
+    color: #e4e4e4;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.btn-export:hover:not(:disabled) {
+    background: rgba(212, 162, 78, 0.15);
+    border-color: rgba(212, 162, 78, 0.4);
+    color: #f3d08a;
+}
+
+.btn-export:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-export i {
+    font-size: 13px;
+}
+
+.btn-export.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+/* ====== 预览图切换按钮（浮在预览区上） ====== */
+.btn-photo-switch {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: #e4e4e4;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    backdrop-filter: blur(4px);
+}
+
+.btn-photo-switch:hover {
+    background: rgba(0, 0, 0, 0.8);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.btn-prev {
+    left: 16px;
+}
+
+.btn-next {
+    right: 16px;
+}
+
+.preview-frame {
+    position: relative;  /* ← 为绝对定位的子元素提供参考 */
+    width: min(100%, 820px);
+    max-width: 100%;
+    max-height: calc(100vh - 120px);
+    aspect-ratio: 4 / 3;
+    padding: 20px;
+    box-sizing: border-box;
+    background: #0b0b0b;
+    border-radius: 14px;
+    box-shadow:
+        0 2px 10px rgba(0, 0, 0, 0.25),
+        0 14px 44px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.preview.preview-transition .preview-frame {
+    transform: translateY(-1px) scale(1.005);
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.28),
+        0 18px 48px rgba(0, 0, 0, 0.38);
+}
+
 #previewCanvas {
     display: block;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
     background: #000;
-    border-radius: 3px;
-    box-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.3),
-        0 12px 48px rgba(0, 0, 0, 0.45),
-        0 0 0 1px rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
 }
 
 /* ====== 模态弹窗（导入 + 错误提示共用） ====== */
@@ -300,52 +496,151 @@ body, html {
 .modal-overlay.visible { display: flex; }
 
 .modal-box {
-    width: 420px;
+    width: 460px;
+    max-width: calc(100vw - 32px);
+    height: 580px; /* 从 540px 增加到 580px */
     background: #1a1a1a;
     border: 1px solid #2a2a2a;
     border-radius: 14px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
-.modal-header {
-    padding: 20px 24px 0;
+/* 区域1: 标题和步骤指示器 */
+.modal-header-section {
+    padding: 20px 24px 16px; /* 增加间距：上20px，下16px */
+    border-bottom: 1px solid #2a2a2a;
+    flex-shrink: 0;
+}
+
+.modal-title {
     font-family: 'Space Grotesk', sans-serif;
     font-size: 16px;
     font-weight: 600;
     color: var(--fg);
+    margin-bottom: 16px; /* 增加与 stepper 的间距 */
 }
 
-.modal-step {
-    margin-top: 6px;
+.modal-stepper {
+    display: flex;
+    flex-direction: row;
+    gap: 12px; /* 增加步骤之间的间距 */
+}
+
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    transition: all 0.18s ease;
+    flex: 1;
+    min-width: 180px;
+}
+
+.step-item.active {
+    background: rgba(212, 162, 78, 0.12);
+    border-color: rgba(212, 162, 78, 0.35);
+    box-shadow: inset 0 0 0 1px rgba(212, 162, 78, 0.12);
+}
+
+.step-item.done {
+    background: rgba(76, 175, 125, 0.08);
+    border-color: rgba(76, 175, 125, 0.24);
+}
+
+.step-item.disabled {
+    opacity: 0.65;
+    pointer-events: none;
+}
+
+.step-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #a0a0a0;
+    background: #282828;
+    flex-shrink: 0;
+}
+
+.step-item.active .step-badge {
+    color: #111;
+    background: var(--accent);
+}
+
+.step-item.done .step-badge {
+    color: #0f1915;
+    background: #4caf7d;
+}
+
+.step-copy {
+    min-width: 0;
+    flex: 1;
+}
+
+.step-title {
     font-size: 11px;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--accent);
+    color: var(--fg);
+    line-height: 1.3;
 }
 
+.step-desc {
+    margin-top: 2px;
+    font-size: 10px;
+    color: #7a7a7a;
+    line-height: 1.3;
+}
+
+/* 区域2: 编辑区 */
 .modal-body {
-    padding: 20px 24px;
+    padding: 16px 24px; /* 从 12px 增加到 16px */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    gap: 12px; /* 从 8px 增加到 12px */
 }
 
 .modal-hint {
-    font-size: 13px;
+    font-size: 12px;
     color: #a0a0a0;
-    margin-bottom: 16px;
-    line-height: 1.5;
+    margin-bottom: 0;
+    line-height: 1.4;
+    flex-shrink: 0;
 }
 
 .drop-zone {
-    border: 2px dashed #333;
-    border-radius: 10px;
-    padding: 28px 16px;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 0;
+    height: 140px;
     text-align: center;
     cursor: pointer;
     transition: all 0.18s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: #1a1a1a;
 }
 
-.drop-zone:hover {
+.drop-zone.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.drop-zone:hover:not(.disabled) {
     border-color: var(--accent);
     background: rgba(212, 162, 78, 0.05);
 }
@@ -360,18 +655,69 @@ body, html {
 .drop-zone span {
     font-size: 12px;
     color: #5e5e5e;
+    line-height: 1.4;
 }
 
 .modal-preview {
-    margin-top: 12px;
+    position: relative;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 140px;
+    overflow: hidden;
+    cursor: pointer;
+    background: #1a1a1a;
+    border-radius: 6px;
+    border: 1px solid #2a2a2a;
+    flex-shrink: 0;
+    padding: 0;
 }
 
 .modal-preview img {
-    max-width: 100%;
-    max-height: 140px;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.modal-preview + .modal-preview {
+    margin-top: 12px;
+}
+
+.modal-preview .preview-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 6px;
     border-radius: 6px;
-    border: 1px solid #2a2a2a;
+    background: rgba(0, 0, 0, 0.72);
+    color: #fff;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    pointer-events: none;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.modal-preview:hover .preview-overlay {
+    opacity: 1;
+}
+
+.modal-preview .preview-overlay i {
+    font-size: 16px;
+}
+
+.modal-preview .preview-overlay span {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
 .modal-preview .preview-label {
@@ -382,18 +728,82 @@ body, html {
     margin-top: 6px;
 }
 
+/* Upload Section - Fixed height to prevent layout shift */
+.upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 0;
+    height: 140px;
+    flex-shrink: 0;
+}
+
+.btn-auto-mask {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px; /* 增加内边距：左右从 10px 到 16px */
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    background: transparent;
+    color: #d4a24e;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+    user-select: none;
+    margin-top: 0;
+    flex-shrink: 0;
+    min-height: 32px; /* 从 28px 增加到 32px */
+    width: 100%; /* 全宽显示 */
+}
+
+.btn-auto-mask:hover:not(:disabled) {
+    background: rgba(212, 162, 78, 0.1);
+    border-color: rgba(212, 162, 78, 0.4);
+}
+
+.btn-auto-mask:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.auto-mask-error {
+    margin-top: 0;
+    padding: 6px 10px;
+    background: rgba(224, 82, 82, 0.1);
+    border: 1px solid rgba(224, 82, 82, 0.3);
+    border-radius: 4px;
+    color: #e05252;
+    font-size: 11px;
+    line-height: 1.4;
+    flex-shrink: 0;
+    min-height: 28px;
+    display: none;
+}
+
+.auto-mask-error.visible {
+    display: block;
+}
+
+/* 区域3: 底部按钮 */
 .modal-footer {
-    padding: 0 24px 20px;
+    padding: 16px 24px; /* 从 12px 增加到 16px */
     display: flex;
     gap: 10px;
     justify-content: flex-end;
+    border-top: 1px solid #2a2a2a;
+    flex-shrink: 0;
 }
 
 .modal-footer .btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 16px;
+    padding: 8px 18px; /* 增加内边距 */
     border: 1px solid #2a2a2a;
     border-radius: 8px;
     background: #1c1c1c;
@@ -412,7 +822,30 @@ body, html {
     border-color: #363636;
 }
 
-.modal-footer .btn:active {
+.modal-footer .btn-primary {
+    background: #1c1c1c;
+    border-color: #2a2a2a;
+    color: #666;
+}
+
+.modal-footer .btn-primary:not(:disabled) {
+    background: rgba(212, 162, 78, 0.2);
+    border-color: rgba(212, 162, 78, 0.5);
+    color: #f3d08a;
+}
+
+.modal-footer .btn-primary:not(:disabled):hover {
+    background: rgba(212, 162, 78, 0.28);
+    border-color: rgba(212, 162, 78, 0.7);
+}
+
+.modal-footer .btn:disabled {
+    opacity: 1;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.modal-footer .btn:active:not(:disabled) {
     transform: scale(0.97);
 }
 
@@ -462,6 +895,31 @@ body, html {
     font-size: 11px;
     display: block;
     margin-top: 4px;
+}
+
+/* ====== 滚动条优化 ====== */
+.effect-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.effect-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.effect-list::-webkit-scrollbar-thumb {
+    background: #3a3a3a;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    background-clip: content-box;
+    transition: background 0.2s ease;
+}
+
+.effect-list::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.effect-list::-webkit-scrollbar-thumb:active {
+    background: #666;
 }
 
 /* ====== 滚动条 ====== */
