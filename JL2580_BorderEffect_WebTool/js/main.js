@@ -50,7 +50,7 @@
     // ====== 配置 ======
     var RES_DIR      = 'Resources/';   // 素材目录
     var TOLERANCE    = 2;             // #1c1c1c 匹配容差（JPEG 有损压缩后像素值会偏移）
-    var DEFAULT_PHOTO = '1.JPG';      // 默认原图文件名
+    var DEFAULT_PHOTO = '1.jpg';      // 默认原图文件名
     var MAX_BORDER_ATTEMPTS = 99;     // 自动检测边框文件的最大尝试次数
     var CONSECUTIVE_FAILURE_THRESHOLD = 3; // 连续失败阈值
 
