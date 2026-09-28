@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OLED UI Creation Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07070a;
+  --bg-subtle: #0d0d12;
+  --fg: #e8e8ec;
+  --muted: #6b6b7a;
+  --accent: #00d4aa;
+  --accent-dim: #00a080;
+  --card: #111118;
+  --border: #1e1e2a;
+  --glow: rgba(0, 212, 170, 0.15);
+  --warning: #f59e0b;
+  --error: #ef4444;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.ambient-glow {
+  position: fixed;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--glow) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(40px);
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+.logo-mark {
+  width: 46px; height: 46px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+  color: var(--bg);
+  font-weight: 700; font-size: 15px;
+  border-radius: 10px;
+  letter-spacing: -0.5px;
+  box-shadow: 0 4px 24px rgba(0, 212, 170, 0.25);
+  flex-shrink: 0;
+}
+
+.app-header h1 {
+  font-size: 18px; font-weight: 600;
+  margin: 0; letter-spacing: -0.3px; line-height: 1.3;
+}
+
+.app-header p {
+  font-size: 12px; color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  animation: fadeIn 0.6s ease backwards;
+}
+
+.panel-head {
+  display: flex; align-items: flex-start; gap: 14px;
+  margin-bottom: 20px;
+}
+
+.step-badge {
+  background: rgba(0, 212, 170, 0.08);
+  border: 1px solid rgba(0, 212, 170, 0.25);
+  color: var(--accent);
+  font-size: 11px; font-weight: 600;
+  padding: 4px 8px; border-radius: 6px;
+  flex-shrink: 0; letter-spacing: 0.5px;
+  margin-top: 1px;
+}
+
+.panel-head h2 {
+  font-size: 15px; font-weight: 600;
+  margin: 0; letter-spacing: -0.2px;
+}
+
+.panel-sub {
+  font-size: 12px; color: var(--muted);
+  margin: 2px 0 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Size picker view ---------- */
+#size-view {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+.size-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.size-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  color: var(--fg);
+  text-align: center;
+  outline: none;
+}
+
+.size-card:hover {
+  border-color: var(--accent);
+  background: rgba(0, 212, 170, 0.05);
+  transform: translateY(-2px);
+}
+
+.size-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.size-card .dim {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.size-card .label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.custom-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.custom-label {
+  font-size: 13px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.custom-input {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+  font-variant-numeric: tabular-nums;
+}
+
+.custom-input:focus {
+  border-color: var(--accent);
+}
+
+.custom-input::-webkit-outer-spin-button,
+.custom-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.custom-input[type=number] { -moz-appearance: textfield; }
+
+.custom-sep {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.apply-btn {
+  padding: 11px 22px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+  border: none;
+  border-radius: 6px;
+  color: var(--bg);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.apply-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 212, 170, 0.3);
+}
+
+.apply-btn:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+/* ---------- Editor view ---------- */
+#editor-view {
+  position: relative;
+  z-index: 1;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+}
+
+.editor-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.editor-header .logo-mark {
+  width: 36px;
+  height: 36px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+
+.editor-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+.editor-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.ghost-btn {
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.ghost-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ghost-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.ghost-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.editor-main {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 16px;
+  padding: 16px 24px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.canvas-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px),
+    var(--bg-subtle);
+  background-size: 20px 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: auto;
+  min-height: 0;
+  position: relative;
+}
+
+#grid {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  cursor: crosshair;
+  background: #ffffff;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  user-select: none;
+  touch-action: none;
+}
+
+/* ---------- Tool sidebar ---------- */
+.tools {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.tool-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tool-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.import-btn,
+.action-btn {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  outline: none;
+}
+
+.import-btn:hover,
+.action-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(0, 212, 170, 0.04);
+}
+
+.import-btn:focus-visible,
+.action-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.action-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Two icon buttons side by side */
+.action-btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.icon-btn {
+  width: 100%;
+  padding: 12px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+}
+
+.icon-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(0, 212, 170, 0.04);
+}
+
+.icon-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.icon-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.file-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slider-row label {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+.slider-row label span {
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+input[type="range"] {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.tool-hint {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+/* ---------- Footer ---------- */
+.editor-footer {
+  padding: 14px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+}
+
+.export-btn {
+  padding: 14px 44px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--bg);
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.2px;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 212, 170, 0.3);
+}
+
+.export-btn:active { transform: translateY(0); }
+
+.export-btn:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 3px;
+}
+
+@media (max-width: 720px) {
+  .editor-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+  .tools {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  .tool-panel { flex: 1 0 auto; min-width: 220px; }
+  .size-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body class="bg-grid">
+<div class="ambient-glow" style="top:-240px; left:-240px;"></div>
+<div class="ambient-glow" style="bottom:-300px; right:-240px;"></div>
+
+<!-- ============ Size Picker View ============ -->
+<div id="size-view">
+  <header class="app-header">
+    <div class="logo-mark">UI</div>
+    <div>
+      <h1>OLED UI Creation Tool</h1>
+      <p>Pick a canvas size, draw or import, export BMP</p>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head">
+      <span class="step-badge">01</span>
+      <div>
+        <h2>Canvas Size</h2>
+        <p class="panel-sub">Pick a preset, or enter a custom size</p>
+      </div>
+    </div>
+
+    <div class="size-grid" id="size-grid">
+      <button class="size-card" data-w="128" data-h="64">
+        <div class="dim">128 × 64</div>
+        <div class="label">Common</div>
+      </button>
+      <button class="size-card" data-w="128" data-h="32">
+        <div class="dim">128 × 32</div>
+        <div class="label">Wide</div>
+      </button>
+      <button class="size-card" data-w="96" data-h="16">
+        <div class="dim">96 × 16</div>
+        <div class="label">Compact</div>
+      </button>
+      <button class="size-card" data-w="64" data-h="48">
+        <div class="dim">64 × 48</div>
+        <div class="label">Small</div>
+      </button>
+      <button class="size-card" data-w="64" data-h="32">
+        <div class="dim">64 × 32</div>
+        <div class="label">Tiny</div>
+      </button>
+      <button class="size-card" data-w="32" data-h="16">
+        <div class="dim">32 × 16</div>
+        <div class="label">Icon</div>
+      </button>
+    </div>
+
+    <div class="custom-row">
+      <span class="custom-label">Custom</span>
+      <input type="number" class="custom-input" id="custom-w" min="8" max="512" step="1" placeholder="W" value="128">
+      <span class="custom-sep">×</span>
+      <input type="number" class="custom-input" id="custom-h" min="8" max="512" step="1" placeholder="H" value="64">
+      <button class="apply-btn" id="apply-custom">Apply</button>
+    </div>
+  </section>
+</div>
+
+<!-- ============ Editor View ============ -->
+<div id="editor-view" hidden>
+
+  <header class="editor-header">
+    <div class="logo-mark">UI</div>
+    <div>
+      <div class="editor-title">OLED UI Creation</div>
+      <div class="editor-sub" id="editor-dims">128 × 64</div>
+    </div>
+    <div class="header-actions">
+      <button class="ghost-btn" id="back-btn">Change size</button>
+    </div>
+  </header>
+
+  <div class="editor-main">
+    <div class="canvas-wrap" id="canvas-wrap">
+      <canvas id="grid"></canvas>
+    </div>
+
+    <aside class="tools">
+      <div class="tool-panel">
+        <div class="tool-title">Import</div>
+        <div class="slider-row">
+          <label>Threshold <span id="thresh-val">128</span></label>
+          <input type="range" id="threshold" min="0" max="255" value="128">
+        </div>
+        <button class="import-btn" id="import-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          Import image
+        </button>
+        <input type="file" class="file-input" id="file-input" accept="image/*">
+        <div class="tool-hint">
+          Smaller images keep their original size and are centered.
+          Larger ones are scaled down proportionally to fit.
+        </div>
+      </div>
+
+      <div class="tool-panel">
+        <div class="tool-title">Canvas</div>
+
+        <button class="action-btn" id="invert-btn">Invert</button>
+
+        <div class="action-btn-row">
+          <button class="icon-btn" id="undo-btn" disabled title="Undo" aria-label="Undo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 7v6h6"/>
+              <path d="M3 13a9 9 0 1 0 3-7.7L3 8"/>
+            </svg>
+          </button>
+          <button class="icon-btn" id="redo-btn" disabled title="Redo" aria-label="Redo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 7v6h-6"/>
+              <path d="M21 13a9 9 0 1 1-3-7.7L21 8"/>
+            </svg>
+          </button>
+        </div>
+
+        <button class="action-btn" id="clear-btn">Clear</button>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="editor-footer">
+    <button class="export-btn" id="export-btn">Export BMP</button>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- State ---------- */
+  const state = {
+    W: 128,
+    H: 64,
+    pixels: null,
+  };
+
+  const undoStack = [];   // snapshots of previous states
+  const redoStack = [];   // snapshots popped by undo, available for redo
+
+  /* ---------- DOM ---------- */
+  const $ = id => document.getElementById(id);
+  const sizeView    = $('size-view');
+  const editorView  = $('editor-view');
+  const sizeGrid    = $('size-grid');
+  const customW     = $('custom-w');
+  const customH     = $('custom-h');
+  const applyCustom = $('apply-custom');
+  const canvasWrap  = $('canvas-wrap');
+  const canvas      = $('grid');
+  const ctx         = canvas.getContext('2d');
+  const editorDims  = $('editor-dims');
+  const importBtn   = $('import-btn');
+  const fileInput   = $('file-input');
+  const thresholdEl = $('threshold');
+  const threshVal   = $('thresh-val');
+  const invertBtn   = $('invert-btn');
+  const undoBtn     = $('undo-btn');
+  const redoBtn     = $('redo-btn');
+  const clearBtn    = $('clear-btn');
+  const exportBtn   = $('export-btn');
+  const backBtn     = $('back-btn');
+
+  /* ---------- History ---------- */
+  function pushHistory() {
+    undoStack.push(new Uint8Array(state.pixels));
+    redoStack.length = 0;      // a new action invalidates the redo chain
+    updateHistoryButtons();
+  }
+
+  function undo() {
+    if (!undoStack.length) return;
+    redoStack.push(new Uint8Array(state.pixels));
+    state.pixels = undoStack.pop();
+    updateHistoryButtons();
+    render();
+  }
+
+  function redo() {
+    if (!redoStack.length) return;
+    undoStack.push(new Uint8Array(state.pixels));
+    state.pixels = redoStack.pop();
+    updateHistoryButtons();
+    render();
+  }
+
+  function updateHistoryButtons() {
+    undoBtn.disabled = undoStack.length === 0;
+    redoBtn.disabled = redoStack.length === 0;
+  }
+
+  /* ---------- Init ---------- */
+  function initCanvas(w, h) {
+    state.W = w;
+    state.H = h;
+    state.pixels = new Uint8Array(w * h);
+    undoStack.length = 0;
+    redoStack.length = 0;
+    updateHistoryButtons();
+  }
+
+  /* ---------- Scale ---------- */
+  function currentScale() {
+    const rect = canvasWrap.getBoundingClientRect();
+    const availW = rect.width - 48;
+    const availH = rect.height - 48;
+    const sx = availW / state.W;
+    const sy = availH / state.H;
+    let s = Math.floor(Math.min(sx, sy));
+    s = Math.max(1, s);
+    s = Math.min(s, 24);
+    return s;
+  }
+
+  /* ---------- Render ---------- */
+  function render() {
+    const scale = currentScale();
+    const cw = state.W * scale;
+    const ch = state.H * scale;
+
+    if (canvas.width !== cw || canvas.height !== ch) {
+      canvas.width = cw;
+      canvas.height = ch;
+    }
+
+    ctx.imageSmoothingEnabled = false;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, cw, ch);
+
+    ctx.fillStyle = '#000000';
+    const W = state.W, H = state.H, px = state.pixels;
+    for (let y = 0; y < H; y++) {
+      const row = y * W;
+      const py = y * scale;
+      for (let x = 0; x < W; x++) {
+        if (px[row + x]) {
+          ctx.fillRect(x * scale, py, scale, scale);
+        }
+      }
+    }
+
+    if (scale >= 4) {
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= W; x++) {
+        const p = x * scale + 0.5;
+        ctx.beginPath();
+        ctx.moveTo(p, 0);
+        ctx.lineTo(p, ch);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= H; y++) {
+        const p = y * scale + 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, p);
+        ctx.lineTo(cw, p);
+        ctx.stroke();
+      }
+    }
+  }
+
+  /* ---------- Enter / exit editor ---------- */
+  function enterEditor(w, h) {
+    initCanvas(w, h);
+    editorDims.textContent = w + ' \u00D7 ' + h;
+    sizeView.hidden = true;
+    editorView.hidden = false;
+    requestAnimationFrame(() => render());
+  }
+
+  function exitEditor() {
+    editorView.hidden = true;
+    sizeView.hidden = false;
+  }
+
+  sizeGrid.addEventListener('click', e => {
+    const card = e.target.closest('.size-card');
+    if (!card) return;
+    enterEditor(parseInt(card.dataset.w, 10), parseInt(card.dataset.h, 10));
+  });
+
+  applyCustom.addEventListener('click', () => {
+    const w = parseInt(customW.value, 10);
+    const h = parseInt(customH.value, 10);
+    if (!w || !h || w < 8 || h < 8 || w > 512 || h > 512) {
+      alert('Please enter width and height between 8 and 512.');
+      return;
+    }
+    enterEditor(w, h);
+  });
+
+  backBtn.addEventListener('click', exitEditor);
+
+  /* ---------- Drawing ---------- */
+  let drawing = false;
+  let paintMode = 1;
+
+  function getCell(ev) {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((ev.clientX - rect.left) / rect.width * state.W);
+    const y = Math.floor((ev.clientY - rect.top) / rect.height * state.H);
+    return { x, y };
+  }
+
+  function setPixel(x, y, v) {
+    if (x < 0 || x >= state.W || y < 0 || y >= state.H) return false;
+    const i = y * state.W + x;
+    if (state.pixels[i] === v) return false;
+    state.pixels[i] = v;
+    return true;
+  }
+
+  canvas.addEventListener('pointerdown', ev => {
+    if (ev.button !== 0) return;
+    const { x, y } = getCell(ev);
+    if (x < 0 || x >= state.W || y < 0 || y >= state.H) return;
+
+    pushHistory();
+
+    canvas.setPointerCapture(ev.pointerId);
+    drawing = true;
+    paintMode = state.pixels[y * state.W + x] ? 0 : 1;
+    setPixel(x, y, paintMode);
+    render();
+  });
+
+  canvas.addEventListener('pointermove', ev => {
+    if (!drawing) return;
+    const { x, y } = getCell(ev);
+    if (setPixel(x, y, paintMode)) render();
+  });
+
+  canvas.addEventListener('pointerup', () => { drawing = false; });
+  canvas.addEventListener('pointercancel', () => { drawing = false; });
+
+  /* ---------- Canvas actions ---------- */
+  function invertCanvas() {
+    pushHistory();
+    const px = state.pixels;
+    for (let i = 0; i < px.length; i++) px[i] = px[i] ? 0 : 1;
+    render();
+  }
+  invertBtn.addEventListener('click', invertCanvas);
+
+  undoBtn.addEventListener('click', undo);
+  redoBtn.addEventListener('click', redo);
+
+  function clearCanvas() {
+    let hasInk = false;
+    for (let i = 0; i < state.pixels.length; i++) {
+      if (state.pixels[i]) { hasInk = true; break; }
+    }
+    if (!hasInk) return;
+    pushHistory();
+    state.pixels.fill(0);
+    render();
+  }
+  clearBtn.addEventListener('click', clearCanvas);
+
+  /* ---------- Threshold label ---------- */
+  thresholdEl.addEventListener('input', () => {
+    threshVal.textContent = thresholdEl.value;
+  });
+
+  /* ---------- Import ---------- */
+  importBtn.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => applyImage(img);
+      img.onerror = () => alert('Failed to load image.');
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+    fileInput.value = '';
+  });
+
+  function applyImage(img) {
+    const imgW = img.naturalWidth || img.width;
+    const imgH = img.naturalHeight || img.height;
+
+    let drawW, drawH;
+    if (imgW <= state.W && imgH <= state.H) {
+      drawW = imgW;
+      drawH = imgH;
+    } else {
+      const scale = Math.min(state.W / imgW, state.H / imgH);
+      drawW = Math.max(1, Math.floor(imgW * scale));
+      drawH = Math.max(1, Math.floor(imgH * scale));
+      if (drawW > state.W) drawW = state.W;
+      if (drawH > state.H) drawH = state.H;
+    }
+
+    const offX = Math.floor((state.W - drawW) / 2);
+    const offY = Math.floor((state.H - drawH) / 2);
+
+    const c = document.createElement('canvas');
+    c.width  = state.W;
+    c.height = state.H;
+    const cx = c.getContext('2d');
+    cx.imageSmoothingEnabled = true;
+    cx.fillStyle = '#ffffff';
+    cx.fillRect(0, 0, state.W, state.H);
+    cx.drawImage(img, offX, offY, drawW, drawH);
+
+    const data = cx.getImageData(0, 0, state.W, state.H).data;
+    const th   = parseInt(thresholdEl.value, 10);
+
+    const next = new Uint8Array(state.W * state.H);
+    for (let i = 0; i < next.length; i++) {
+      const r = data[i * 4];
+      const g = data[i * 4 + 1];
+      const b = data[i * 4 + 2];
+      const a = data[i * 4 + 3];
+      let lum;
+      if (a < 128) lum = 255;
+      else         lum = (r * 299 + g * 587 + b * 114) / 1000;
+      next[i] = lum < th ? 1 : 0;
+    }
+
+    pushHistory();
+    state.pixels = next;
+    render();
+  }
+
+  /* ---------- Export 1-bit BMP ---------- */
+  exportBtn.addEventListener('click', () => {
+    const blob = encodeBMP1(state.pixels, state.W, state.H);
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'oled-' + state.W + 'x' + state.H + '.bmp';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  });
+
+  function encodeBMP1(pixels, W, H) {
+    const rowBytes    = Math.ceil(W / 8);
+    const rowPad      = (4 - (rowBytes % 4)) % 4;
+    const rowSize     = rowBytes + rowPad;
+    const pixDataSize = rowSize * H;
+    const paletteSize = 2 * 4;
+    const offBits     = 14 + 40 + paletteSize;
+    const totalSize   = offBits + pixDataSize;
+
+    const buf = new ArrayBuffer(totalSize);
+    const dv  = new DataView(buf);
+    const u8  = new Uint8Array(buf);
+
+    u8[0] = 0x42; u8[1] = 0x4D;
+    dv.setUint32(2,  totalSize, true);
+    dv.setUint16(6,  0, true);
+    dv.setUint16(8,  0, true);
+    dv.setUint32(10, offBits,   true);
+
+    dv.setUint32(14, 40,          true);
+    dv.setInt32 (18, W,           true);
+    dv.setInt32 (22, H,           true);
+    dv.setUint16(26, 1,           true);
+    dv.setUint16(28, 1,           true);
+    dv.setUint32(30, 0,           true);
+    dv.setUint32(34, pixDataSize, true);
+    dv.setInt32 (38, 2835,        true);
+    dv.setInt32 (42, 2835,        true);
+    dv.setUint32(46, 2,           true);
+    dv.setUint32(50, 0,           true);
+
+    u8[54] = 0;   u8[55] = 0;   u8[56] = 0;   u8[57] = 0;
+    u8[58] = 255; u8[59] = 255; u8[60] = 255; u8[61] = 0;
+
+    for (let y = 0; y < H; y++) {
+      const srcY   = H - 1 - y;
+      const rowOff = offBits + y * rowSize;
+      for (let x = 0; x < W; x++) {
+        const isBlack = pixels[srcY * W + x];
+        const bit = isBlack ? 0 : 1;
+        if (bit) {
+          const byteIdx = rowOff + (x >> 3);
+          const bitPos  = 7 - (x & 7);
+          u8[byteIdx] |= (1 << bitPos);
+        }
+      }
+    }
+
+    return new Blob([buf], { type: 'image/bmp' });
+  }
+
+  /* ---------- Keyboard shortcuts (Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z) ---------- */
+  document.addEventListener('keydown', e => {
+    if (editorView.hidden) return;
+    const mod = e.ctrlKey || e.metaKey;
+    if (!mod) return;
+    if (e.key === 'z' || e.key === 'Z') {
+      e.preventDefault();
+      if (e.shiftKey) redo(); else undo();
+    } else if (e.key === 'y' || e.key === 'Y') {
+      e.preventDefault();
+      redo();
+    }
+  });
+
+  /* ---------- Resize ---------- */
+  let resizeRAF = null;
+  window.addEventListener('resize', () => {
+    if (editorView.hidden) return;
+    if (resizeRAF) cancelAnimationFrame(resizeRAF);
+    resizeRAF = requestAnimationFrame(() => {
+      resizeRAF = null;
+      render();
+    });
+  });
+
+})();
+</script>
+</body>
+</html>
