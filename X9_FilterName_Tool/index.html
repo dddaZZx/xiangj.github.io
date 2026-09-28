@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>X9 Camera Filter Name Customization Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="extra.css">
+</head>
+<body class="bg-grid">
+<div class="ambient-glow" style="top:-240px; left:-240px;"></div>
+<div class="ambient-glow" style="bottom:-300px; right:-240px;"></div>
+
+<!-- Loading -->
+<div class="boot" id="boot">
+  <div class="boot-content">
+    <div class="loading-spinner"></div>
+    <div class="boot-title">Loading letter set...</div>
+    <div class="boot-sub" id="boot-progress">0 / 26</div>
+  </div>
+</div>
+
+<!-- Error -->
+<div class="boot" id="boot-error" hidden>
+  <div class="error-card">
+    <div class="error-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"/>
+        <line x1="12" y1="8" x2="12" y2="13"/>
+        <line x1="12" y1="16.5" x2="12.01" y2="16.5"/>
+      </svg>
+    </div>
+    <h2>Failed to load</h2>
+    <p>Please check your network connection and try again,<br>or contact the developer.</p>
+    <button class="retry-btn" id="retry-btn">Retry</button>
+  </div>
+</div>
+
+<!-- App -->
+<main class="app" id="app" hidden>
+
+  <header class="app-header">
+    <div class="logo-mark">X9</div>
+    <div>
+      <h1>X9 Camera Filter Name Customization Tool</h1>
+      <p>OLED filter name BMP generator &middot; 67 &times; 26 canvas</p>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head">
+      <span class="step-badge">01</span>
+      <div class="panel-head-text">
+        <h2>Enter Filter Name</h2>
+        <p class="panel-sub">Use the on-screen keyboard below</p>
+      </div>
+      <span class="counter" id="name-hint">0 chars &middot; 0 / 67 px</span>
+    </div>
+
+    <div class="input-display" id="input-display">
+      <span class="input-text" id="input-text"></span>
+      <span class="input-cursor"></span>
+    </div>
+
+    <div class="kb-page" data-page="abc">
+      <div class="keyboard" id="keyboard-abc"></div>
+    </div>
+    <div class="kb-page" data-page="sym" hidden>
+      <div class="keyboard" id="keyboard-sym"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <span class="step-badge">02</span>
+      <div>
+        <h2>Preview</h2>
+        <p class="panel-sub">67 &times; 26 px &middot; top 15 rows blank &middot; left aligned from x=0</p>
+      </div>
+    </div>
+
+    <div class="preview-stage">
+      <canvas id="preview" width="67" height="26"></canvas>
+    </div>
+
+    <div class="preview-meta">
+      <span><span id="preview-count">0</span> characters</span>
+      <span>Pixel width: <span id="preview-width" class="accent">0</span> / 67</span>
+    </div>
+  </section>
+
+  <button class="export-btn" id="export-btn" disabled>Export BMP</button>
+
+</main>
+
+<script src="glyphs.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
