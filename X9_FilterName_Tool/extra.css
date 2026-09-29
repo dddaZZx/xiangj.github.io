@@ -1,12 +1,14 @@
 /* extra.css
  * Component styles for the filter name tool, loaded after style.css.
- * Covers: input display, symbol page sizing, draw modal.
+ * Covers: input display, symbol page sizing, draw modal, char picker,
+ *         DIY confirm dialog, DIY pixel editor modal.
  */
 
 /* ---------- Input display ---------- */
 .input-display {
   display: flex;
   align-items: center;
+  gap: 8px;
   min-height: 56px;
   padding: 10px 18px;
   background: var(--bg);
@@ -43,6 +45,22 @@
   animation: cursorBlink 1s steps(2) infinite;
 }
 
+.input-diy-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  background: rgba(0, 212, 170, 0.12);
+  border: 1px solid rgba(0, 212, 170, 0.35);
+  border-radius: 4px;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
 @keyframes cursorBlink {
   0%, 50%  { opacity: 1; }
   51%, 100% { opacity: 0; }
@@ -69,8 +87,10 @@
   width: 354px;
 }
 
-/* ---------- Draw modal ---------- */
-.draw-modal {
+/* ---------- Shared modal backdrop ---------- */
+.draw-modal,
+.diy-editor-modal,
+.confirm-modal {
   position: fixed;
   inset: 0;
   display: flex;
@@ -80,13 +100,55 @@
   padding: 24px;
 }
 
-.draw-backdrop {
+.draw-backdrop,
+.diy-editor-backdrop,
+.confirm-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(8px);
 }
 
+/* ---------- Confirm dialog ---------- */
+.confirm-content {
+  position: relative;
+  background: #2e2e38;
+  border: 1px solid #3a3a48;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
+  animation: drawIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  max-width: 440px;
+  width: 100%;
+}
+
+.confirm-header {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  margin-bottom: 10px;
+  color: var(--fg);
+}
+
+.confirm-body {
+  font-size: 13px;
+  color: #b6b6c4;
+  line-height: 1.65;
+  margin-bottom: 22px;
+}
+
+.confirm-body strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.confirm-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ---------- Draw modal ---------- */
 .draw-content {
   position: relative;
   background: #2e2e38;
@@ -95,12 +157,16 @@
   padding: 24px;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
   animation: drawIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 320px;
 }
 
 @keyframes drawIn {
   from { opacity: 0; transform: translateY(12px) scale(0.96); }
   to   { opacity: 1; transform: translateY(0)    scale(1);    }
 }
+
+.draw-view { display: block; }
+.draw-view[hidden] { display: none; }
 
 .draw-header {
   font-size: 15px;
@@ -115,7 +181,6 @@
   margin-bottom: 18px;
 }
 
-/* Horizontal centering wrapper */
 .draw-grid-wrap {
   display: flex;
   justify-content: center;
@@ -143,21 +208,26 @@
   transition: box-shadow 0.1s ease, transform 0.05s ease;
 }
 
-.draw-cell:hover  { box-shadow: inset 0 0 0 2px rgba(196, 181, 253, 0.75); }
+.draw-cell:hover  { box-shadow: inset 0 0 0 2px rgba(0, 212, 170, 0.75); }
 .draw-cell:active { transform: scale(0.92); }
 
-/* Soft lavender ink — clearly coloured, not white, not harsh */
-.draw-cell.on { background: #c4b5fd; }
+.draw-cell.on { background: #00d4aa; }
 
 .draw-footer {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 8px;
-  justify-content: flex-end;
   margin-top: 20px;
 }
 
+.draw-footer-group {
+  display: flex;
+  gap: 8px;
+}
+
 .draw-btn {
-  padding: 9px 18px;
+  padding: 9px 16px;
   border-radius: 6px;
   font-family: inherit;
   font-size: 13px;
@@ -168,6 +238,7 @@
   color: #e8e8ec;
   transition: all 0.2s ease;
   outline: none;
+  white-space: nowrap;
 }
 
 .draw-btn:hover:not(:disabled) {
@@ -197,7 +268,184 @@
   cursor: not-allowed;
 }
 
-.draw-clear { margin-right: auto; }
+/* ---------- Character picker ---------- */
+.char-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 6px;
+  background: #23232c;
+  border: 1px solid #3a3a48;
+  border-radius: 6px;
+}
+
+.char-picker-cell {
+  aspect-ratio: 1;
+  background: #ffffff;
+  border: 1px solid #3a3a48;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  outline: none;
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.char-picker-cell:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 212, 170, 0.25);
+}
+
+.char-picker-cell:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.char-picker-cell:active {
+  transform: scale(0.94);
+}
+
+.char-picker-cell canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+}
+
+/* ---------- Preview meta with DIY button ---------- */
+.preview-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.diy-btn {
+  margin-left: auto;
+  padding: 5px 11px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.diy-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.diy-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.diy-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.diy-btn.active {
+  background: rgba(0, 212, 170, 0.1);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.1);
+}
+
+.diy-btn.active:hover {
+  background: rgba(0, 212, 170, 0.16);
+}
+
+/* Preview highlight when DIY pixels exist */
+.preview-stage.diy-mode {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.12);
+}
+
+/* ---------- DIY editor modal ---------- */
+.diy-editor-content {
+  position: relative;
+  background: #2e2e38;
+  border: 1px solid #3a3a48;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
+  animation: drawIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  max-width: calc(100vw - 48px);
+}
+
+.diy-editor-header {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  margin-bottom: 4px;
+}
+
+.diy-editor-sub {
+  font-size: 12px;
+  color: #9a9aac;
+  margin-bottom: 18px;
+}
+
+.diy-editor-canvas-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 8px;
+  background: #23232c;
+  border: 1px solid #3a3a48;
+  border-radius: 6px;
+  max-width: 100%;
+  overflow: auto;
+}
+
+#diy-canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #ffffff;
+  cursor: crosshair;
+  user-select: none;
+  touch-action: none;
+  border-radius: 2px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.diy-editor-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.diy-editor-footer-group {
+  display: flex;
+  gap: 8px;
+}
 
 /* ---------- Responsive ---------- */
 @media (max-width: 640px) {
@@ -207,6 +455,8 @@
     width: 64px;
   }
   .key.space { width: 278px; }
+
+  .char-picker-grid { grid-template-columns: repeat(7, 1fr); }
 }
 
 @media (max-width: 480px) {
@@ -218,6 +468,7 @@
   }
   .input-text   { min-height: 22px; line-height: 22px; }
   .input-cursor { height: 18px; }
+  .input-diy-badge { font-size: 9px; padding: 2px 6px; }
 
   .keyboard-row.sym-row { width: 380px; }
   .keyboard-row.sym-row .key.fn.wide {
@@ -231,5 +482,10 @@
     grid-template-rows:    repeat(11, 22px);
   }
   .draw-cell    { width: 22px; height: 22px; }
-  .draw-content { padding: 18px; }
+  .draw-content { padding: 18px; min-width: 0; }
+
+  .char-picker-grid { grid-template-columns: repeat(6, 1fr); }
+
+  .confirm-content,
+  .diy-editor-content { padding: 18px; }
 }

@@ -2,15 +2,14 @@
  * Full application logic:
  *   - boot / load letters, digits, symbols from char/ (glyphs.js fallback)
  *   - build input display, ABC keyboard, symbols keyboard
- *   - draw modal for custom 7x11 glyphs
+ *   - draw modal for custom 7x11 glyphs, with a picker to load existing glyphs
+ *   - DIY: confirm dialog -> opens a large pixel editor modal
+ *     Once DIY is used, the keyboard stays locked until "Clear all".
  *   - render preview canvas
  *   - encode & export 8-bit BMP
  *
  * Reads glyph pixel maps and keyboard layouts from window.GLYPHS (glyphs.js).
  * Component styles live in extra.css.
- *
- * Layout rule: total pixel width of all characters plus 1px gaps
- * must not exceed CANVAS_W. Character count is unlimited.
  */
 (function () {
   'use strict';
@@ -26,10 +25,9 @@
   const DRAW_W = 7;
   const DRAW_H = 11;
 
-  // Draw color applied inline on toggled cells (bypasses any CSS issue)
-  const INK_COLOR = '#00d4aa';   // vivid violet
-
-  const PUA_BASE = 0xE000;
+  const INK_COLOR  = '#00d4aa';
+  const THUMB_SIZE = 32;
+  const PUA_BASE   = 0xE000;
 
   const ALPHABET  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const DIGITS    = '0123456789';
@@ -52,6 +50,10 @@
   let name = '';
   let drawCounter = 0;
 
+  // DIY state: when diyPixels is not null, the preview is driven by it
+  // and the keyboard is locked (except Clear all).
+  let diyPixels = null;
+
   /* ---------- DOM ---------- */
   const $ = id => document.getElementById(id);
   const bootEl        = $('boot');
@@ -60,14 +62,18 @@
   const retryBtn      = $('retry-btn');
   const appEl         = $('app');
   const inputText     = $('input-text');
+  const inputDiyBadge = $('input-diy-badge');
   const kbAbc         = $('keyboard-abc');
   const kbSym         = $('keyboard-sym');
   const nameHint      = $('name-hint');
+  const previewStage  = $('preview-stage');
   const preview       = $('preview');
   const previewCtx    = preview.getContext('2d');
   const previewCount  = $('preview-count');
   const previewWidth  = $('preview-width');
   const exportBtn     = $('export-btn');
+  const diyBtn        = $('diy-btn');
+  const diyBtnText    = $('diy-btn-text');
 
   /* ---------- Helpers ---------- */
   function isPUA(ch) {
@@ -79,6 +85,10 @@
     if (ch === ' ') return '\u2423';
     if (isPUA(ch))  return '\u270E';
     return ch;
+  }
+
+  function diyActive() {
+    return diyPixels !== null;
   }
 
   /* ---------- Glyph canvas builders ---------- */
@@ -111,12 +121,10 @@
     return c;
   }
 
-  /* ---------- Filename resolution ---------- */
   function resolveFilename(ch) {
     return FILENAMES[ch] || ch;
   }
 
-  /* ---------- Loader (BMP first, glyphs.js fallback) ---------- */
   function loadChar(ch) {
     return new Promise((resolve) => {
       const img = new Image();
@@ -222,7 +230,6 @@
     row2.appendChild(makeFnButton('ABC', 'to-abc', 'Back to letters', 'wide'));
     kbSym.appendChild(row2);
 
-    // Row 3: [draw] [space] [Clear all] [鈱玗
     const row3 = document.createElement('div');
     row3.className = 'keyboard-row';
 
@@ -245,6 +252,7 @@
 
   /* ---------- State mutations ---------- */
   function addChar(ch) {
+    if (diyActive()) return;
     if (!canAdd(ch)) return;
     name += ch;
     updateDisplay();
@@ -252,6 +260,7 @@
   }
 
   function delChar() {
+    if (diyActive()) return;
     if (!name.length) return;
     name = name.slice(0, -1);
     updateDisplay();
@@ -259,8 +268,8 @@
   }
 
   function clearAll() {
-    if (!name.length) return;
     name = '';
+    diyPixels = null;
     updateDisplay();
     render();
   }
@@ -268,22 +277,46 @@
   /* ---------- Display sync ---------- */
   function updateDisplay() {
     inputText.textContent = name.split('').map(displayChar).join('');
+    inputDiyBadge.hidden = !diyActive();
 
     const w = currentWidth();
-    nameHint.textContent = name.length + ' chars \u00B7 ' + w + ' / ' + CANVAS_W + ' px';
+    const hintBase = name.length + ' chars \u00B7 ' + w + ' / ' + CANVAS_W + ' px';
+    nameHint.textContent = diyActive() ? 'DIY \u00B7 ' + hintBase : hintBase;
     nameHint.classList.toggle('full', w >= CANVAS_W);
 
-    document.querySelectorAll('.key[data-char]').forEach(k => {
-      k.disabled = !canAdd(k.dataset.char);
-    });
-    document.querySelectorAll('.key[data-action="space"]').forEach(k => {
-      k.disabled = !canAdd(' ');
-    });
+    // DIY button
+    diyBtn.disabled = !(name.length > 0 || diyActive());
+    diyBtnText.textContent = diyActive() ? 'Edit DIY' : 'DIY';
+    diyBtn.classList.toggle('active', diyActive());
+    previewStage.classList.toggle('diy-mode', diyActive());
+
+    // Reset every key to enabled, then apply per-state locks
+    document.querySelectorAll('.key').forEach(k => { k.disabled = false; });
+
+    if (diyActive()) {
+      // Lock everything except Clear all
+      document.querySelectorAll('.key').forEach(k => {
+        if (k.dataset.action !== 'clear') k.disabled = true;
+      });
+    } else {
+      // Lock based on available room / content
+      document.querySelectorAll('.key[data-char]').forEach(k => {
+        k.disabled = !canAdd(k.dataset.char);
+      });
+      document.querySelectorAll('.key[data-action="space"]').forEach(k => {
+        k.disabled = !canAdd(' ');
+      });
+      document.querySelectorAll('.key[data-action="draw"]').forEach(k => {
+        k.disabled = currentWidth() + (name.length > 0 ? GAP : 0) + 1 > CANVAS_W;
+      });
+      document.querySelectorAll('.key[data-action="delete"]').forEach(k => {
+        k.disabled = name.length === 0;
+      });
+    }
+
+    // Clear all is always enabled
     document.querySelectorAll('.key[data-action="clear"]').forEach(k => {
-      k.disabled = name.length === 0;
-    });
-    document.querySelectorAll('.key[data-action="draw"]').forEach(k => {
-      k.disabled = currentWidth() + (name.length > 0 ? GAP : 0) + 1 > CANVAS_W;
+      k.disabled = false;
     });
   }
 
@@ -291,6 +324,21 @@
   function render() {
     previewCtx.fillStyle = '#ffffff';
     previewCtx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+    if (diyPixels) {
+      previewCtx.fillStyle = '#000000';
+      const total = diyPixels.length;
+      for (let i = 0; i < total; i++) {
+        if (!diyPixels[i]) continue;
+        const x = i % CANVAS_W;
+        const y = (i / CANVAS_W) | 0;
+        previewCtx.fillRect(x, y, 1, 1);
+      }
+      previewCount.textContent = name.length;
+      previewWidth.textContent = currentWidth();
+      exportBtn.disabled = false;
+      return;
+    }
 
     let x = 0, drawn = 0;
     for (const ch of name) {
@@ -307,12 +355,296 @@
     exportBtn.disabled = !(name.length > 0 && drawn === name.length);
   }
 
-  /* ---------- Draw modal ---------- */
-  let drawModal  = null;
-  let drawGridEl = null;
-  let drawAddBtn = null;
+  /* ---------- Read preview pixels ---------- */
+  function readPreviewPixels() {
+    const data = previewCtx.getImageData(0, 0, CANVAS_W, CANVAS_H).data;
+    const px = new Uint8Array(CANVAS_W * CANVAS_H);
+    for (let i = 0; i < px.length; i++) {
+      const r = data[i * 4];
+      const g = data[i * 4 + 1];
+      const b = data[i * 4 + 2];
+      const lum = (r * 299 + g * 587 + b * 114) / 1000;
+      px[i] = lum < 128 ? 1 : 0;
+    }
+    return px;
+  }
 
-  /* Toggle a cell on/off; sets color inline so it never depends on CSS */
+  /* ---------- Confirm dialog ---------- */
+  function showDiyConfirm() {
+    return new Promise(resolve => {
+      const modal = document.createElement('div');
+      modal.className = 'confirm-modal';
+
+      const backdrop = document.createElement('div');
+      backdrop.className = 'confirm-backdrop';
+
+      const content = document.createElement('div');
+      content.className = 'confirm-content';
+
+      const header = document.createElement('div');
+      header.className = 'confirm-header';
+      header.textContent = 'Enter DIY mode?';
+
+      const body = document.createElement('div');
+      body.className = 'confirm-body';
+      body.innerHTML =
+        'You will open a large pixel editor to modify the preview.<br><br>' +
+        'The keyboard will be <strong>locked</strong> until you press <strong>Clear all</strong>.';
+
+      const footer = document.createElement('div');
+      footer.className = 'confirm-footer';
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'draw-btn';
+      cancelBtn.textContent = 'Cancel';
+
+      const okBtn = document.createElement('button');
+      okBtn.type = 'button';
+      okBtn.className = 'draw-btn primary';
+      okBtn.textContent = 'OK';
+
+      footer.appendChild(cancelBtn);
+      footer.appendChild(okBtn);
+      content.appendChild(header);
+      content.appendChild(body);
+      content.appendChild(footer);
+      modal.appendChild(backdrop);
+      modal.appendChild(content);
+      document.body.appendChild(modal);
+
+      function close(result) {
+        if (modal.parentNode) modal.parentNode.removeChild(modal);
+        document.removeEventListener('keydown', onKey);
+        resolve(result);
+      }
+      function onKey(e) {
+        if (e.key === 'Escape') { e.preventDefault(); close(false); }
+      }
+      backdrop.addEventListener('click', () => close(false));
+      cancelBtn.addEventListener('click', () => close(false));
+      okBtn.addEventListener('click', () => close(true));
+      document.addEventListener('keydown', onKey);
+
+      requestAnimationFrame(() => okBtn.focus());
+    });
+  }
+
+  /* ---------- DIY editor modal ---------- */
+  function openDiyEditor() {
+    if (!diyPixels) diyPixels = readPreviewPixels();
+
+    const work = diyPixels;
+
+    const availW = Math.min(window.innerWidth - 96, 900);
+    const availH = Math.min(window.innerHeight - 300, 520);
+    let scale = Math.floor(Math.min(availW / CANVAS_W, availH / CANVAS_H));
+    scale = Math.max(4, Math.min(scale, 14));
+
+    const modal = document.createElement('div');
+    modal.className = 'diy-editor-modal';
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'diy-editor-backdrop';
+
+    const content = document.createElement('div');
+    content.className = 'diy-editor-content';
+
+    const header = document.createElement('div');
+    header.className = 'diy-editor-header';
+    header.textContent = 'DIY Pixel Editor';
+
+    const sub = document.createElement('div');
+    sub.className = 'diy-editor-sub';
+    sub.textContent = '67 \u00D7 26 \u00B7 click to toggle a pixel, drag to paint';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'diy-editor-canvas-wrap';
+
+    const canvas = document.createElement('canvas');
+    canvas.id = 'diy-canvas';
+    canvas.width  = CANVAS_W * scale;
+    canvas.height = CANVAS_H * scale;
+    wrap.appendChild(canvas);
+
+    const footer = document.createElement('div');
+    footer.className = 'diy-editor-footer';
+
+    const leftGroup = document.createElement('div');
+    leftGroup.className = 'diy-editor-footer-group';
+
+    const clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.className = 'draw-btn';
+    clearBtn.textContent = 'Clear canvas';
+
+    leftGroup.appendChild(clearBtn);
+
+    const rightGroup = document.createElement('div');
+    rightGroup.className = 'diy-editor-footer-group';
+
+    const resetBtn = document.createElement('button');
+    resetBtn.type = 'button';
+    resetBtn.className = 'draw-btn';
+    resetBtn.textContent = 'Reset to preview';
+
+    const doneBtn = document.createElement('button');
+    doneBtn.type = 'button';
+    doneBtn.className = 'draw-btn primary';
+    doneBtn.textContent = 'Done';
+
+    rightGroup.appendChild(resetBtn);
+    rightGroup.appendChild(doneBtn);
+
+    footer.appendChild(leftGroup);
+    footer.appendChild(rightGroup);
+
+    content.appendChild(header);
+    content.appendChild(sub);
+    content.appendChild(wrap);
+    content.appendChild(footer);
+    modal.appendChild(backdrop);
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    const ctx = canvas.getContext('2d');
+
+    function paint() {
+      ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#000000';
+      for (let y = 0; y < CANVAS_H; y++) {
+        for (let x = 0; x < CANVAS_W; x++) {
+          if (work[y * CANVAS_W + x]) {
+            ctx.fillRect(x * scale, y * scale, scale, scale);
+          }
+        }
+      }
+
+      if (scale >= 5) {
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x <= CANVAS_W; x++) {
+          const px = x * scale + 0.5;
+          ctx.beginPath();
+          ctx.moveTo(px, 0);
+          ctx.lineTo(px, canvas.height);
+          ctx.stroke();
+        }
+        for (let y = 0; y <= CANVAS_H; y++) {
+          const py = y * scale + 0.5;
+          ctx.beginPath();
+          ctx.moveTo(0, py);
+          ctx.lineTo(canvas.width, py);
+          ctx.stroke();
+        }
+      }
+    }
+
+    let drawing = false;
+    let paintVal = 1;
+
+    function cellFromEvent(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) / rect.width  * CANVAS_W);
+      const y = Math.floor((e.clientY - rect.top)  / rect.height * CANVAS_H);
+      return { x, y };
+    }
+
+    function setCell(x, y, v) {
+      if (x < 0 || x >= CANVAS_W || y < 0 || y >= CANVAS_H) return;
+      const idx = y * CANVAS_W + x;
+      if (work[idx] === v) return;
+      work[idx] = v;
+      paint();
+    }
+
+    canvas.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return;
+      const { x, y } = cellFromEvent(e);
+      if (x < 0 || x >= CANVAS_W || y < 0 || y >= CANVAS_H) return;
+      drawing = true;
+      paintVal = work[y * CANVAS_W + x] ? 0 : 1;
+      setCell(x, y, paintVal);
+      try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+
+    canvas.addEventListener('pointermove', e => {
+      if (!drawing) return;
+      const { x, y } = cellFromEvent(e);
+      setCell(x, y, paintVal);
+    });
+
+    canvas.addEventListener('pointerup', () => { drawing = false; });
+    canvas.addEventListener('pointercancel', () => { drawing = false; });
+
+    function close() {
+      if (modal.parentNode) modal.parentNode.removeChild(modal);
+      document.removeEventListener('keydown', onKey);
+      updateDisplay();
+      render();
+    }
+
+    function resetToPreview() {
+      const saved = diyPixels;
+      diyPixels = null;
+      render();
+      const fresh = readPreviewPixels();
+      diyPixels = saved;
+      work.set(fresh);
+      paint();
+      render();
+    }
+
+    function clearCanvas() {
+      work.fill(0);
+      paint();
+    }
+
+    clearBtn.addEventListener('click', clearCanvas);
+    resetBtn.addEventListener('click', resetToPreview);
+    doneBtn.addEventListener('click', close);
+    backdrop.addEventListener('click', close);
+
+    function onKey(e) {
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+    }
+    document.addEventListener('keydown', onKey);
+
+    paint();
+    updateDisplay();
+    render();
+  }
+
+  /* ---------- DIY button handler ---------- */
+  async function onDiyClick() {
+    if (diyActive()) {
+      openDiyEditor();
+      return;
+    }
+    if (!name.length) return;
+
+    const ok = await showDiyConfirm();
+    if (!ok) return;
+
+    diyPixels = readPreviewPixels();
+    updateDisplay();
+    render();
+    openDiyEditor();
+  }
+
+  diyBtn.addEventListener('click', onDiyClick);
+
+  /* ---------- Draw modal ---------- */
+  let drawModal       = null;
+  let drawGridEl      = null;
+  let drawAddBtn      = null;
+  let drawViewCanvas  = null;
+  let drawViewPicker  = null;
+  let drawPickerGridEl = null;
+
   function setCellOn(cell, on) {
     if (on) {
       cell.classList.add('on');
@@ -334,13 +666,16 @@
     const content = document.createElement('div');
     content.className = 'draw-content';
 
-    const header = document.createElement('div');
-    header.className = 'draw-header';
-    header.textContent = 'Draw a custom glyph';
+    const viewCanvas = document.createElement('div');
+    viewCanvas.className = 'draw-view';
 
-    const sub = document.createElement('div');
-    sub.className = 'draw-sub';
-    sub.textContent = '7 \u00D7 11 grid \u00B7 click a cell to toggle';
+    const header1 = document.createElement('div');
+    header1.className = 'draw-header';
+    header1.textContent = 'Draw a custom glyph';
+
+    const sub1 = document.createElement('div');
+    sub1.className = 'draw-sub';
+    sub1.textContent = '7 \u00D7 11 grid \u00B7 click a cell to toggle';
 
     const wrap = document.createElement('div');
     wrap.className = 'draw-grid-wrap';
@@ -353,19 +688,33 @@
         cell.className = 'draw-cell';
         cell.dataset.x = x;
         cell.dataset.y = y;
-        cell.style.background = '#ffffff';   // explicit base colour, no CSS needed
+        cell.style.background = '#ffffff';
         grid.appendChild(cell);
       }
     }
     wrap.appendChild(grid);
 
-    const footer = document.createElement('div');
-    footer.className = 'draw-footer';
+    const footer1 = document.createElement('div');
+    footer1.className = 'draw-footer';
+
+    const leftGroup1 = document.createElement('div');
+    leftGroup1.className = 'draw-footer-group';
 
     const clearBtn = document.createElement('button');
     clearBtn.type = 'button';
-    clearBtn.className = 'draw-btn draw-clear';
+    clearBtn.className = 'draw-btn';
     clearBtn.textContent = 'Clear';
+
+    const loadBtn = document.createElement('button');
+    loadBtn.type = 'button';
+    loadBtn.className = 'draw-btn';
+    loadBtn.textContent = 'Load';
+
+    leftGroup1.appendChild(clearBtn);
+    leftGroup1.appendChild(loadBtn);
+
+    const rightGroup1 = document.createElement('div');
+    rightGroup1.className = 'draw-footer-group';
 
     const cancelBtn = document.createElement('button');
     cancelBtn.type = 'button';
@@ -378,14 +727,53 @@
     addBtn.textContent = 'Add';
     addBtn.disabled = true;
 
-    footer.appendChild(clearBtn);
-    footer.appendChild(cancelBtn);
-    footer.appendChild(addBtn);
+    rightGroup1.appendChild(cancelBtn);
+    rightGroup1.appendChild(addBtn);
 
-    content.appendChild(header);
-    content.appendChild(sub);
-    content.appendChild(wrap);
-    content.appendChild(footer);
+    footer1.appendChild(leftGroup1);
+    footer1.appendChild(rightGroup1);
+
+    viewCanvas.appendChild(header1);
+    viewCanvas.appendChild(sub1);
+    viewCanvas.appendChild(wrap);
+    viewCanvas.appendChild(footer1);
+
+    const viewPicker = document.createElement('div');
+    viewPicker.className = 'draw-view';
+    viewPicker.hidden = true;
+
+    const header2 = document.createElement('div');
+    header2.className = 'draw-header';
+    header2.textContent = 'Pick a character';
+
+    const sub2 = document.createElement('div');
+    sub2.className = 'draw-sub';
+    sub2.textContent = 'Click a character to load it onto the canvas';
+
+    const pickerGrid = document.createElement('div');
+    pickerGrid.className = 'char-picker-grid';
+
+    const footer2 = document.createElement('div');
+    footer2.className = 'draw-footer';
+
+    const leftGroup2 = document.createElement('div');
+    leftGroup2.className = 'draw-footer-group';
+
+    const backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.className = 'draw-btn';
+    backBtn.textContent = 'Back';
+
+    leftGroup2.appendChild(backBtn);
+    footer2.appendChild(leftGroup2);
+
+    viewPicker.appendChild(header2);
+    viewPicker.appendChild(sub2);
+    viewPicker.appendChild(pickerGrid);
+    viewPicker.appendChild(footer2);
+
+    content.appendChild(viewCanvas);
+    content.appendChild(viewPicker);
     modal.appendChild(backdrop);
     modal.appendChild(content);
     document.body.appendChild(modal);
@@ -411,17 +799,46 @@
       if (ok) closeDrawModal();
     });
 
+    loadBtn.addEventListener('click', () => {
+      renderCharPicker();
+      viewCanvas.hidden = true;
+      viewPicker.hidden = false;
+    });
+
+    backBtn.addEventListener('click', () => {
+      viewPicker.hidden = true;
+      viewCanvas.hidden = false;
+    });
+
+    pickerGrid.addEventListener('click', e => {
+      const cell = e.target.closest('.char-picker-cell');
+      if (!cell) return;
+      const ch = cell.dataset.char;
+      if (!ch) return;
+      loadCharIntoDrawGrid(ch);
+      viewPicker.hidden = true;
+      viewCanvas.hidden = false;
+    });
+
     document.addEventListener('keydown', e => {
       if (modal.hidden) return;
       if (e.key === 'Escape') {
         e.preventDefault();
-        closeDrawModal();
+        if (!viewPicker.hidden) {
+          viewPicker.hidden = true;
+          viewCanvas.hidden = false;
+        } else {
+          closeDrawModal();
+        }
       }
     });
 
-    drawModal  = modal;
-    drawGridEl = grid;
-    drawAddBtn = addBtn;
+    drawModal        = modal;
+    drawGridEl       = grid;
+    drawAddBtn       = addBtn;
+    drawViewCanvas   = viewCanvas;
+    drawViewPicker   = viewPicker;
+    drawPickerGridEl = pickerGrid;
   }
 
   function gridHasInk() {
@@ -429,8 +846,11 @@
   }
 
   function openDrawModal() {
+    if (diyActive()) return;
     drawGridEl.querySelectorAll('.draw-cell').forEach(c => setCellOn(c, false));
     drawAddBtn.disabled = true;
+    drawViewPicker.hidden = true;
+    drawViewCanvas.hidden = false;
     drawModal.hidden = false;
   }
 
@@ -438,7 +858,96 @@
     drawModal.hidden = true;
   }
 
+  function renderCharPicker() {
+    const grid = drawPickerGridEl;
+    if (grid.dataset.rendered === '1') return;
+
+    grid.innerHTML = '';
+    const frag = document.createDocumentFragment();
+
+    for (const ch of ALL_CHARS) {
+      const L = letters[ch];
+      if (!L) continue;
+
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'char-picker-cell';
+      cell.dataset.char = ch;
+      cell.title = ch;
+      cell.setAttribute('aria-label', 'Load ' + ch);
+
+      const thumb = makeCharThumb(L);
+      cell.appendChild(thumb);
+      frag.appendChild(cell);
+    }
+
+    grid.appendChild(frag);
+    grid.dataset.rendered = '1';
+  }
+
+  function makeCharThumb(letterObj) {
+    const c = document.createElement('canvas');
+    c.width  = THUMB_SIZE;
+    c.height = THUMB_SIZE;
+    const cx = c.getContext('2d');
+    cx.imageSmoothingEnabled = false;
+    cx.fillStyle = '#ffffff';
+    cx.fillRect(0, 0, THUMB_SIZE, THUMB_SIZE);
+
+    const scale = Math.min(
+      Math.floor(THUMB_SIZE / letterObj.width),
+      Math.floor(THUMB_SIZE / letterObj.height)
+    ) || 1;
+
+    const dw = letterObj.width  * scale;
+    const dh = letterObj.height * scale;
+    const ox = Math.floor((THUMB_SIZE - dw) / 2);
+    const oy = Math.floor((THUMB_SIZE - dh) / 2);
+
+    cx.drawImage(letterObj.canvas, ox, oy, dw, dh);
+    return c;
+  }
+
+  function loadCharIntoDrawGrid(ch) {
+    const L = letters[ch];
+    if (!L) return;
+
+    const c = L.canvas;
+    const w = c.width;
+    const h = c.height;
+    const data = c.getContext('2d').getImageData(0, 0, w, h).data;
+
+    drawGridEl.querySelectorAll('.draw-cell').forEach(cell => setCellOn(cell, false));
+
+    let offX, offY;
+    if (w <= DRAW_W) offX = Math.floor((DRAW_W - w) / 2);
+    else             offX = 0;
+
+    if (h <= DRAW_H) offY = Math.floor((DRAW_H - h) / 2);
+    else             offY = 0;
+
+    const cells = drawGridEl.querySelectorAll('.draw-cell');
+
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const lum = (data[i] * 299 + data[i + 1] * 587 + data[i + 2] * 114) / 1000;
+        if (lum >= 128) continue;
+
+        const gx = offX + x;
+        const gy = offY + y;
+        if (gx < 0 || gx >= DRAW_W || gy < 0 || gy >= DRAW_H) continue;
+
+        setCellOn(cells[gy * DRAW_W + gx], true);
+      }
+    }
+
+    drawAddBtn.disabled = !gridHasInk();
+  }
+
   function commitDraw() {
+    if (diyActive()) return false;
+
     const cells = drawGridEl.querySelectorAll('.draw-cell');
     const ink = [];
     let xmin = DRAW_W, xmax = -1;
@@ -503,6 +1012,7 @@
     for (const k of Object.keys(letters)) delete letters[k];
     name = '';
     drawCounter = 0;
+    diyPixels = null;
 
     const chars = ALL_CHARS.split('');
     const results = await Promise.allSettled(chars.map(ch => {
@@ -587,6 +1097,8 @@
     const t = e.target;
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
 
+    if (diyActive()) return;
+
     if (e.key === 'Backspace') {
       e.preventDefault();
       delChar();
@@ -664,7 +1176,7 @@
 
   /* ---------- Export ---------- */
   exportBtn.addEventListener('click', () => {
-    if (!name) return;
+    if (!name && !diyPixels) return;
 
     let blob;
     try {
@@ -681,12 +1193,13 @@
       return;
     }
 
-    const safe = name
-      .replace(/ /g, '_')
+    let safe = (name || 'diy').replace(/ /g, '_');
+    safe = safe
       .split('')
       .map(c => isPUA(c) ? '_draw' : c)
       .join('')
       .replace(/[\\/:*?"<>|]/g, '_');
+    if (diyPixels) safe += '_diy';
 
     const url = URL.createObjectURL(blob);
     const a   = document.createElement('a');
@@ -704,4 +1217,3 @@
   buildDrawModal();
   boot();
 })();
-
